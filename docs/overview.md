@@ -41,7 +41,8 @@ flowchart LR
 ```
 
 - Issue の解析と JSON の形式は [Issue 解析の仕様](carryover-spec.md) を参照してください
-- 画面の設計は [フロントエンド設計書](design.md) を参照してください
+- 画面の設計は [フロントエンド設計書](design/frontend.md) を参照してください
+- 収集ツールの設計は [バックエンド設計書](design/backend.md) を参照してください
 
 ## 収集と公開（GitHub Actions）
 

@@ -18,8 +18,11 @@ docs/
   overview.md          # 全体構成（リポジトリの役割と関係、ローカルの配置、データの流れ、ワークフロー）
   carryover-spec.md    # Issue 解析の仕様（収集のモード、出力する JSON の形式）
   coding-rules.md      # Java と TypeScript に共通するコーディングルール
-  design.md            # フロントエンド設計書の入口（目次）
-  design/              # フロントエンド設計書の各章（01-architecture.md 〜 05-quality.md）
+  design.md            # 設計書の入口（フロントエンドとバックエンドへの案内）
+  design/frontend.md   # フロントエンド設計書の入口（目次）
+  design/frontend/     # フロントエンド設計書の各章（01-architecture.md 〜 05-quality.md）
+  design/backend.md    # バックエンド設計書の入口（目次）
+  design/backend/      # バックエンド設計書の各章（01-architecture.md 〜 05-quality.md）
 ```
 
 ## ドキュメントの置き場所
@@ -34,16 +37,17 @@ docs/
 - 設計書は各リポジトリの現状の実装を正として記述する。実装と食い違う箇所を見つけたら更新する
 - 他のリポジトリのファイルへのリンクは、GitHub の URL（`https://github.com/KenichiroArai/<リポジトリ>/blob/main/<パス>`）で書く。本リポジトリ内のリンクは相対パスで書く
 - 図は Mermaid で書く。ノードの ID に空白を入れず、色やスタイルは指定しない
-- 新しい章を追加した場合は、`design.md` の目次や `README.md` の一覧も更新する
+- 新しい章を追加した場合は、関係する設計書の目次（`design/frontend.md` または `design/backend.md`）と `README.md` の一覧も更新する
 
 ## 更新のきっかけ
 
-| 変更                                              | 更新するドキュメント                                        |
-| ------------------------------------------------- | ----------------------------------------------------------- |
-| 解析ルール・収集のモード・JSON の形式（gr002）    | `docs/carryover-spec.md`、必要なら `docs/design/02-data.md` |
-| 画面のコード・設定（mk002）                       | `docs/design.md` と `docs/design/` の全章を見直す           |
-| ワークフロー・リポジトリの構成（daily-tasks-git） | `docs/overview.md`、`docs/design/05-quality.md`             |
-| 共通のコーディングルール                          | `docs/coding-rules.md` と各リポジトリの `AGENTS.md`         |
+| 変更                                              | 更新するドキュメント                                                        |
+| ------------------------------------------------- | --------------------------------------------------------------------------- |
+| 解析ルール・収集のモード・JSON の形式（gr002）    | `docs/carryover-spec.md`、必要なら `docs/design/backend/` と `docs/design/frontend/02-data.md` |
+| 収集ツールのコード・設定（gr002）                 | `docs/design/backend.md` と `docs/design/backend/` の関係する章を見直す     |
+| 画面のコード・設定（mk002）                       | `docs/design/frontend.md` と `docs/design/frontend/` の全章を見直す         |
+| ワークフロー・リポジトリの構成（daily-tasks-git） | `docs/overview.md`、`docs/design/frontend/05-quality.md`、`docs/design/backend/05-quality.md` |
+| 共通のコーディングルール                          | `docs/coding-rules.md` と各リポジトリの `AGENTS.md`                         |
 
 ## やってはいけないこと
 

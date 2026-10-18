@@ -1,6 +1,6 @@
 # 05. 品質・運用
 
-[設計書の目次へ戻る](../design.md)
+[設計書の目次へ戻る](../frontend.md)
 
 ## テスト
 
@@ -54,7 +54,7 @@ ESLint と Prettier は `.next/`・`out/`・`public/data/`・`coverage/` を対�
 
 ## npm スクリプト
 
-mk002_daily-tasks_web-next で実行します。共通するコーディングルールは [Java と TypeScript に共通するコーディングルール](../coding-rules.md) を参照してください。
+mk002_daily-tasks_web-next で実行します。共通するコーディングルールは [Java と TypeScript に共通するコーディングルール](../../coding-rules.md) を参照してください。
 
 | コマンド               | 内容                                                                 |
 | ---------------------- | -------------------------------------------------------------------- |
