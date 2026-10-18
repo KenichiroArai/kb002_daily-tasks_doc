@@ -97,4 +97,4 @@ Issue の一覧は毎回すべて取得します。解析と保存を省くか�
 | 認証           | トークンがあるときだけ `Authorization` ヘッダを付ける              |
 | 固定文字列     | URL、ヘッダ、空文字、応答の項目名は repository の `XxxTypes` に置く |
 
-テストでは GitHub API へ実通信しません。`HttpClient` を差し替えるコンストラクタを使います。
+テストでは GitHub API へ実通信しません。`HttpClient` を生成するフィールドを差し替えます。
