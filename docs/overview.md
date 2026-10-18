@@ -48,8 +48,8 @@ flowchart LR
 daily-tasks-git の [update-carryover.yml](https://github.com/KenichiroArai/daily-tasks-git/blob/main/.github/workflows/update-carryover.yml) が、収集から公開までを行います。
 
 - トリガー: 毎日 06:00（JST）のスケジュールと、手動実行（`full` 入力で全件モード）。Issue の編集ごとにコミットされないよう、Issue イベントでは動かしません
-- daily-tasks-git、gr002_daily-tasks、mk002_daily-tasks_web-next を兄弟ディレクトリとしてチェックアウトします（いずれも public のため、追加のトークンは不要）
-- gr002_daily-tasks をビルド（テストを含む）し、daily-tasks-git をカレントにして jar を実行します
+- daily-tasks-git、gr002_daily-tasks、mk002_daily-tasks_web-next を兄弟ディレクトリとしてチェックアウトします（いずれも public のため、チェックアウト用の追加トークンは不要）
+- gr002_daily-tasks をビルド（テストを含む）し、daily-tasks-git をカレントにして jar を実行します。依存の kmg-core と kmg-fund は GitHub Packages から取得し、`packages: read` の `GITHUB_TOKEN` で認証します。両パッケージで daily-tasks-git に Actions からの読み取りを許可します
 - `docs/data/` に差分があれば daily-tasks-git にコミットしてプッシュします
 - mk002_daily-tasks_web-next をビルド（lint・型チェック・テストを含む）し、`out/` を GitHub Pages にデプロイします。basePath は `actions/configure-pages` の出力を環境変数 `PAGES_BASE_PATH` で渡します
 - GitHub Pages の Source は「GitHub Actions」にします
