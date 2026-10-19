@@ -4,7 +4,7 @@
 
 ## コマンド
 
-[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈し、[CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) の `collect` を呼びます。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
+[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈します。収集するときは `ObjectProvider` で新しい [CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) を取り、`initialize` してから `collect` を呼びます。サービスは収集の設定をフィールドに持つため、実行のたびに新しいインスタンスを使います。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
 
 | 引数      | 定数                              | 動作                                       |
 | --------- | --------------------------------- | ------------------------------------------ |
@@ -16,7 +16,7 @@
 
 ## collect の流れ
 
-[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、取得、解析、保存、集計をこの順で行います。戻り値は、解析して保存した Issue の件数です。
+[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、取得、解析、保存、集計をこの順で行います。`collect` は引数を取りません。設定とモードは、その前の `initialize` でフィールドに入っています。戻り値は、解析して保存した Issue の件数です。
 
 ```mermaid
 sequenceDiagram
@@ -26,8 +26,11 @@ sequenceDiagram
   participant Parse as CarryoverParseLogic
   participant Aggregate as CarryoverAggregateLogic
 
-  Command->>Service: collect(properties, full)
+  Command->>Service: initialize(properties, full)
+  Service->>Issue: initialize(source)
+  Command->>Service: collect
   Service->>Issue: loadDefaultMinutes
+  Service->>Parse: initialize(defaultMinutes)
   Service->>Issue: loadIssues
   Service->>Issue: fetchAllIssues
   loop 解析が必要な Issue
@@ -38,12 +41,13 @@ sequenceDiagram
   Service->>Issue: saveSummary
 ```
 
-1. 設定を `CarryoverSourceModel` に変換し、標準時間を読み込む
-2. 保存済みの `issues/NNNN.json` を Issue 番号の昇順（`TreeMap`）で読み込む
-3. 対象リポジトリの Issue をすべて取得する
-4. 解析が必要な Issue だけを解析して上書き保存する。解析しなかった Issue は、手順 2 の内容を集計に使う
-5. メモリ上の全解析結果から `summary.json` を作り直し、保存する
-6. モード、取得件数、解析件数、集計した日数、標準時間で補完した件数、時間を決められなかった件数をログに出す
+1. 設定を `CarryoverSourceModel` に変換し、取得元、`recentCount`、全件モードかをフィールドに保持する。取得・保存ロジックも同じ取得元で初期化し、その中で外部 API と DAO を初期化する
+2. 標準時間を読み込み、解析ロジックをその標準時間で初期化する。標準時間はサービスの入力ではなく、収集の途中で得る値のため、`collect` の中で初期化する
+3. 保存済みの `issues/NNNN.json` を Issue 番号の昇順（`TreeMap`）で読み込む
+4. 対象リポジトリの Issue をすべて取得する
+5. 解析が必要な Issue だけを解析して上書き保存する。解析しなかった Issue は、手順 3 の内容を集計に使う
+6. メモリ上の全解析結果から `summary.json` を作り直し、保存する
+7. モード、取得件数、解析件数、集計した日数、標準時間で補完した件数、時間を決められなかった件数をログに出す
 
 Issue の一覧は毎回すべて取得します。解析と保存を省くかどうかは、次の差分判定で決めます。
 
@@ -63,7 +67,7 @@ Issue の一覧は毎回すべて取得します。解析と保存を省くか�
 
 ## 解析
 
-[CarryoverParseLogicImpl#parse](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/CarryoverParseLogicImpl.java) が、1 件の Issue と標準時間から `CarryoverIssueModel` を作ります。
+[CarryoverParseLogicImpl#parse](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/CarryoverParseLogicImpl.java) が、1 件の Issue から `CarryoverIssueModel` を作ります。標準時間は `initialize` で保持したフィールドを使います。
 
 - 日付はタイトルから取る
 - 対象セクションのチェックリスト行を項目にする
@@ -87,7 +91,7 @@ Issue の一覧は毎回すべて取得します。解析と保存を省くか�
 
 ## Issue の取得
 
-[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が GitHub REST API から Issue を取得します。
+[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が GitHub REST API から Issue を取得します。接続設定は `initialize` でフィールドに保持し、`fetchAllIssues` は引数を取りません。
 
 | 項目           | 値                                                                 |
 | -------------- | ------------------------------------------------------------------ |

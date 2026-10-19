@@ -4,7 +4,7 @@
 
 ## 基本方針
 
-- 設定値も業務データも、上の層から下の層へ引き継ぎます。境界では、呼ぶ側の層の型に変換してから渡します
+- 設定値も業務データも、上の層から下の層へ引き継ぎます。境界では、呼ぶ側の層の型に変換してから渡します。引き継ぎは `initialize` で行い、受け取った側はフィールドに保持します。メソッドごとの対象は引数で渡します
 - JSON の形（Jackson のアノテーション）は `repository/dto/json/` だけが持ちます。domain の DTO には付けません
 - 出力する JSON の項目定義は [Issue 解析の仕様](../../carryover-spec.md) に書きます。画面が読むときの検証は [フロントエンド設計書の 02. データ設計](../frontend/02-data.md) です
 
@@ -49,7 +49,18 @@ flowchart LR
 | application → domain      | `CarryoverSourceModel`  | リポジトリ、トークン、出力先の `Path`、標準時間ファイルの `Path` |
 | domain → repository       | `GitHubSettingsDto`、`Path` | API にはリポジトリとトークン。ファイルにはパス     |
 
-`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。変換は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `toSource` と [CarryoverDtoConvertLogic](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/CarryoverDtoConvertLogic.java) の `toGitHubSettingsDto` が行います。
+受け取る側がフィールドに保持するものは次のとおりです。
+
+| 初期化                                         | フィールド                                      |
+| ---------------------------------------------- | ----------------------------------------------- |
+| `CarryoverService.initialize(properties, full)` | 取得元（`CarryoverSourceModel`）、`recentCount`、全件モードか |
+| `CarryoverIssueLogic.initialize(source)`       | 取得元と保存先。同時に外部 API と DAO を初期化する |
+| `CarryoverParseLogic.initialize(defaultMinutes)` | 標準時間。収集の途中で読んだあと、`collect` の中で渡す |
+| `GitHubIssueApi.initialize(settings)`          | 接続設定                                        |
+| `CarryoverDataDao.initialize(dataDir)`         | 出力先のディレクトリ                            |
+| `DefaultMinutesDao.initialize(configFile)`     | 標準時間の設定ファイル                          |
+
+`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。変換は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `toSource` と [CarryoverDtoConvertLogic](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/CarryoverDtoConvertLogic.java) の `toGitHubSettingsDto` が行います。`toSource` はサービスの `initialize` の中で、`toGitHubSettingsDto` は取得・保存ロジックの `initialize` の中で呼びます。
 
 ## 業務データの変換
 
