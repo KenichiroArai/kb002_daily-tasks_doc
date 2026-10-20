@@ -60,7 +60,7 @@ flowchart LR
 | `CarryoverDataDao.initialize(dataDir)`         | 出力先のディレクトリ                            |
 | `DefaultMinutesDao.initialize(configFile)`     | 標準時間の設定ファイル                          |
 
-`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。変換は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `toSource` と [CarryoverDtoConvertLogic](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/CarryoverDtoConvertLogic.java) の `toGitHubSettingsDto` が行います。`toSource` はサービスの `initialize` の中で、`toGitHubSettingsDto` は取得・保存ロジックの `initialize` の中で呼びます。
+`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。変換は [CarryoverSourceModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/model/CarryoverSourceModel.java) のコンストラクタが [CarryoverPropertiesModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/model/CarryoverPropertiesModel.java) から行い、[GitHubSettingsDto](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/dto/GitHubSettingsDto.java) のコンストラクタが `CarryoverSourceModel` から行います。前者は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `initialize` の中で、後者は [CarryoverIssueLogicImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/CarryoverIssueLogicImpl.java) の `initialize` の中で呼びます。
 
 ## 業務データの変換
 
@@ -79,11 +79,11 @@ flowchart LR
 
 | 変換                         | 担当                         | 内容                                                                 |
 | ---------------------------- | ---------------------------- | -------------------------------------------------------------------- |
-| GitHub の応答 → モデル       | `CarryoverDtoConvertLogic`   | `GitHubIssueDto` を `DailyTaskIssueModel` にする                     |
-| モデル → 保存用 DTO          | `CarryoverDtoConvertLogic`   | 件数と残り時間の合計は、項目のリストから `getCount` と `getMinutes` で求める |
-| 保存用 DTO → モデル          | `CarryoverDtoConvertLogic`   | `minutesSource` の文字列を `MinutesSourceTypes` にする。不明なら例外 |
-| 標準時間の Map → モデル      | `CarryoverDtoConvertLogic`   | `Map<String, Double>` を `DefaultMinutesModel` にする                |
-| 集計モデル → DTO             | `CarryoverDtoConvertLogic`   | 日別集計を `CarryoverSummaryDto` にする                              |
+| GitHub の応答 → モデル       | `GitHubIssueDto`             | `toDailyTaskIssueModel` で `DailyTaskIssueModel` にする              |
+| モデル → 保存用 DTO          | `CarryoverIssueDto`          | 件数と残り時間の合計は、項目のリストから `getCount` と `getMinutes` で求める |
+| 保存用 DTO → モデル          | `CarryoverIssueDto`          | `toCarryoverIssueModel`。`minutesSource` の文字列を `MinutesSourceTypes` にする。不明なら例外 |
+| 標準時間の Map → モデル      | `DefaultMinutesModel`        | コンストラクタで `Map<String, Double>` を受け取る                    |
+| 集計モデル → DTO             | `CarryoverSummaryDto`        | 日別集計をコンストラクタで作る                                       |
 | DTO ↔ JSON                   | `CarryoverJsonConvertLogic`  | Issue は読み書きの両方。集計は JSON への書き出しだけを行う           |
 
 GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が domain の `GitHubIssueDto` を直接作ります。

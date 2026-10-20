@@ -25,7 +25,6 @@ gr002_daily-tasks/
         model/                    # Issue、持ち越し項目、日別集計、標準時間、取得元
         types/                    # MinutesSourceTypes、IssueStateTypes、CarryoverSourceFormatTypes
       domain/                     # 共通ロジック
-        logic/                    # CarryoverDtoConvertLogic
         logic/impl/               # 取得・保存、解析、集計の実装
         repository/api/           # GitHubIssueApi
         repository/dao/           # CarryoverDataDao、DefaultMinutesDao
@@ -55,7 +54,7 @@ gr002_daily-tasks/
 | ------------------ | -------------------------------------------------------------------- |
 | `presentation/`    | コマンドライン引数と設定ファイルを受け取り、収集を始める             |
 | `application/`     | 取得、解析、保存、集計の一連の流れを組み立てる                       |
-| `domain/`          | 解析、集計、モデルと DTO の変換。repository に求めるインタフェースを持つ |
+| `domain/`          | 解析、集計。モデルと DTO の変換は変換先の型が行う。repository に求めるインタフェースを持つ |
 | `infrastructure/`  | メッセージの取得。業務の判断や機能固有の設定値は持たない             |
 | `repository/`      | GitHub REST API と JSON ファイルへのアクセス                         |
 
