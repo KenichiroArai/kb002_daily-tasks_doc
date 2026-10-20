@@ -29,10 +29,9 @@ flowchart TB
 | 型                          | 種類         | 役割                                                                 |
 | --------------------------- | ------------ | -------------------------------------------------------------------- |
 | `CarryoverCommand`          | インタフェース | `CommandLineRunner`。実装は `CarryoverCommandImpl`                 |
-| `CarryoverCommandImpl`      | 実装         | 引数を `CarryoverOptionsModel` にし、使い方の表示か、新しいサービスの `initialize` と `collect` を行う |
+| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize` と `collect` を行う |
 | `CarryoverService`          | インタフェース | application に求める収集。実装は `CarryoverServiceImpl`            |
 | `CarryoverPropertiesModel`  | モデル       | `carryover.*` の設定。文字列と変換後の `Path` を持つ               |
-| `CarryoverOptionsModel`     | モデル       | 引数の結果。全件モードか、使い方を表示するか                         |
 | `CommandOptionTypes`        | 列挙型       | `--full`、`--help`、`-h`                                             |
 | `CarryoverPropertiesFormatTypes` | 列挙型  | 設定値の文字列表現                                                   |
 

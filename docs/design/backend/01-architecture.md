@@ -16,7 +16,7 @@ gr002_daily-tasks/
       presentation/               # CLI などの入出力層
         command/                  # CarryoverCommand
         command/impl/             # CarryoverCommandImpl
-        model/                    # CarryoverPropertiesModel、CarryoverOptionsModel
+        model/                    # CarryoverPropertiesModel
         service/                  # CarryoverService（実装は application）
         types/                    # CommandOptionTypes、CarryoverPropertiesFormatTypes
       application/                # ユースケース
