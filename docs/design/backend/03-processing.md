@@ -4,7 +4,7 @@
 
 ## コマンド
 
-[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈します。収集するときは `ObjectProvider` で新しい [CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) を取り、`initialize` してから `collect` を呼びます。サービスは収集の設定をフィールドに持つため、実行のたびに新しいインスタンスを使います。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
+[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈します。収集するときは `ObjectProvider` で新しい [CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) を取り、`initialize` してから `collect`、続けて `aggregate` を呼びます。サービスは収集の設定をフィールドに持つため、実行のたびに新しいインスタンスを使います。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
 
 | 引数      | 定数                              | 動作                                       |
 | --------- | --------------------------------- | ------------------------------------------ |
@@ -14,50 +14,66 @@
 
 引数を付けない実行は差分モードです。`--help` または `-h` があるときは収集しません。
 
-## collect の流れ
+## 収集と集計
 
-[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、取得、解析、保存、集計をこの順で行います。`collect` は引数を取りません。設定とモードは、その前の `initialize` でフィールドに入っています。戻り値は、解析して保存した Issue の件数です。
+[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、取得、解析、Issue の保存をこの順で行います。`collect` は引数を取りません。設定とモードは、その前の `initialize` で役割ごとのサービスに入っています。戻り値は、解析して保存した Issue の件数です。続けて [CarryoverServiceImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、日別の集計を作り、`summary.json` を保存し、結果をログに出します。コマンドは `collect` と `aggregate` のあいだにログや例外処理を置けます。取得・解析・保存の段階はコマンドからは呼びません。
+
+解析は保存より先にまとめて行います。解析の途中で失敗したときは、その実行で解析した Issue はまだ保存されていません。集計は、保存の前でもメモリ上の全解析結果（保存済みと今回解析したもの）を使います。
 
 ```mermaid
 sequenceDiagram
   participant Command as CarryoverCommandImpl
   participant Service as CarryoverServiceImpl
+  participant Collect as CarryoverCollectServiceImpl
+  participant Aggregate as CarryoverAggregateServiceImpl
   participant Issue as DailyTaskIssueLogic
   participant Minutes as DefaultMinutesLogic
   participant Data as CarryoverDataLogic
   participant Parse as CarryoverParseLogic
-  participant Aggregate as CarryoverAggregateLogic
+  participant AggregateLogic as CarryoverAggregateLogic
 
   Command->>Service: initialize(properties, full)
-  Service->>Issue: initialize(repository, token)
-  Service->>Minutes: initialize(defaultMinutesFile)
-  Service->>Data: initialize(dataDir)
+  Service->>Collect: initialize
+  Service->>Aggregate: initialize
+  Collect->>Issue: initialize(repository, token)
+  Collect->>Minutes: initialize(defaultMinutesFile)
+  Collect->>Data: initialize(dataDir)
+  Aggregate->>Data: initialize(dataDir)
   Command->>Service: collect
-  Service->>Minutes: loadDefaultMinutes
-  Service->>Parse: initialize(defaultMinutes)
-  Service->>Data: loadIssues
-  Service->>Issue: fetchAllIssues
+  Service->>Collect: fetch
+  Collect->>Minutes: loadDefaultMinutes
+  Collect->>Parse: initialize(defaultMinutes)
+  Collect->>Data: loadIssues
+  Collect->>Issue: fetchAllIssues
+  Service->>Collect: analyze
   loop 解析が必要な Issue
-    Service->>Parse: parse
-    Service->>Data: saveIssue
+    Collect->>Parse: parse
   end
+  Service->>Collect: saveIssues
+  loop 今回解析した Issue
+    Collect->>Data: saveIssue
+  end
+  Command->>Service: aggregate
   Service->>Aggregate: aggregate
-  Service->>Data: saveSummary
+  Aggregate->>AggregateLogic: aggregate
+  Service->>Aggregate: saveSummary
+  Aggregate->>Data: saveSummary
 ```
 
-1. 設定を `CarryoverSourceModel` に変換し、取得元、`recentCount`、全件モードかをフィールドに保持する。Issue の取得、標準時間の読み込み、解析結果と集計の読み書きは、それぞれが必要とする値で初期化し、その中で外部 API と DAO を初期化する
-2. 標準時間を読み込み、解析ロジックをその標準時間で初期化する。標準時間はサービスの入力ではなく、収集の途中で得る値のため、`collect` の中で初期化する
+1. 設定を `CarryoverSourceModel` に変換し、収集サービスへ取得元、`recentCount`、全件モードかを渡す。集計サービスへ保存先を渡す。それぞれが必要とする値でロジックを初期化し、その中で外部 API と DAO を初期化する。解析結果の読み書きと集計の保存は、別の `CarryoverDataLogic` を同じ保存先で初期化する
+2. 標準時間を読み込み、解析ロジックをその標準時間で初期化する。標準時間はサービスの入力ではなく、収集の途中で得る値のため、`fetch` の中で初期化する
 3. 保存済みの `issues/NNNN.json` を Issue 番号の昇順（`TreeMap`）で読み込む
 4. 対象リポジトリの Issue をすべて取得する
-5. 解析が必要な Issue だけを解析して上書き保存する。解析しなかった Issue は、手順 3 の内容を集計に使う
-6. メモリ上の全解析結果から `summary.json` を作り直し、保存する
-7. モード、取得件数、解析件数、集計した日数、標準時間で補完した件数、時間を決められなかった件数をログに出す
+5. 解析が必要な Issue だけを解析する。この時点では保存しない。解析しなかった Issue は、手順 3 の内容を集計に使う
+6. 今回解析した Issue を上書き保存する
+7. メモリ上の全解析結果から `summary.json` を作り直し、保存する
+8. モード、取得件数、解析件数、集計した日数、標準時間で補完した件数、時間を決められなかった件数をログに出す
 
 Issue の一覧は毎回すべて取得します。解析と保存を省くかどうかは、次の差分判定で決めます。
 
 ## 差分判定
 
-`needsUpdate` が、その Issue を解析し直すかを返します。
+`needsUpdate` が、その Issue を解析し直すかを返します。実装は [CarryoverCollectServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverCollectServiceImpl.java) です。
 
 | 条件                                       | 結果           |
 | ------------------------------------------ | -------------- |

@@ -4,19 +4,23 @@
 
 ## 処理の全体像
 
-コマンドは実行のたびに新しいサービスを取り、`initialize` してから `collect` を呼びます。サービスが役割ごとのロジックに仕事を分けます。ファイルと GitHub API へのアクセスは、domain のロジックが DTO に変換してから repository に渡します。接続設定や保存先は、各呼び出しの引数ではなく `initialize` で渡して、受け取る側がフィールドに保持します。
+コマンドは実行のたびに新しいサービスを取り、`initialize` してから `collect`、続けて `aggregate` を呼びます。統合サービスが収集サービスと集計サービスに仕事を分け、各サービスが役割ごとのロジックを呼びます。ファイルと GitHub API へのアクセスは、domain のロジックが DTO に変換してから repository に渡します。接続設定や保存先は、各呼び出しの引数ではなく `initialize` で渡して、受け取る側がフィールドに保持します。
 
 ```mermaid
 flowchart TB
   command["CarryoverCommandImpl"] --> service["CarryoverServiceImpl"]
-  service --> issueLogic["DailyTaskIssueLogicImpl"]
-  service --> minutesLogic["DefaultMinutesLogicImpl"]
-  service --> dataLogic["CarryoverDataLogicImpl"]
-  service --> parseLogic["CarryoverParseLogicImpl"]
-  service --> aggregateLogic["CarryoverAggregateLogicImpl"]
+  service --> collectService["CarryoverCollectServiceImpl"]
+  service --> aggregateService["CarryoverAggregateServiceImpl"]
+  collectService --> issueLogic["DailyTaskIssueLogicImpl"]
+  collectService --> minutesLogic["DefaultMinutesLogicImpl"]
+  collectService --> dataLogic["CarryoverDataLogicImpl"]
+  collectService --> parseLogic["CarryoverParseLogicImpl"]
+  aggregateService --> aggregateLogic["CarryoverAggregateLogicImpl"]
+  aggregateService --> summaryData["CarryoverDataLogicImpl"]
   issueLogic --> github["GitHubIssueApiImpl"]
   minutesLogic --> minutesDao["DefaultMinutesDaoImpl"]
   dataLogic --> dataDao["CarryoverDataDaoImpl"]
+  summaryData --> dataDao
   dataLogic --> message["MessageLogicImpl"]
   dataDao --> jsonConvert["CarryoverJsonConvertLogic"]
   parseLogic --> message
@@ -24,15 +28,15 @@ flowchart TB
   command --> message
 ```
 
-サービスは一連の流れを行い、ロジックは個々の処理を行います。ロジックのメソッド同士の依存は薄く、共通のパラメータだけをフィールドで共有します。ロジックはサービスを呼びません。状態を持つサービス、ロジック、外部 API、DAO は prototype です。
+サービスは一連の流れを行い、ロジックは個々の処理を行います。役割が複数あるサービスは、統合サービスを残して役割ごとに分けます。ロジックのメソッド同士の依存は薄く、共通のパラメータだけをフィールドで共有します。ロジックはサービスを呼びません。状態を持つサービス、ロジック、外部 API、DAO は prototype です。
 
 ## presentation
 
 | 型                          | 種類         | 役割                                                                 |
 | --------------------------- | ------------ | -------------------------------------------------------------------- |
 | `CarryoverCommand`          | インタフェース | `CommandLineRunner`。実装は `CarryoverCommandImpl`                 |
-| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize` と `collect` を行う |
-| `CarryoverService`          | インタフェース | application に求める収集。実装は `CarryoverServiceImpl`            |
+| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize`、`collect`、`aggregate` を行う |
+| `CarryoverService`          | インタフェース | application に求める収集と集計。実装は `CarryoverServiceImpl`      |
 | `CarryoverPropertiesModel`  | モデル       | `carryover.*` の設定。文字列と変換後の `Path` を持つ               |
 | `CommandOptionTypes`        | 列挙型       | `--full`、`--help`、`-h`                                             |
 | `CarryoverPropertiesFormatTypes` | 列挙型  | 設定値の文字列表現                                                   |
@@ -41,7 +45,11 @@ flowchart TB
 
 | 型                         | 種類         | 役割                                                                 |
 | -------------------------- | ------------ | -------------------------------------------------------------------- |
-| `CarryoverServiceImpl`     | サービス     | 取得元、最新件数、全件モードかをフィールドに持つ。取得、差分判定、解析、保存、集計、結果のログ |
+| `CarryoverServiceImpl`     | サービス     | 収集と集計のサービスを順に呼ぶ。全件モードか、解析結果、取得件数、保存件数をフィールドに持つ。結果のログ |
+| `CarryoverCollectService`  | インタフェース | 取得、差分判定、解析、Issue の保存。実装は `CarryoverCollectServiceImpl` |
+| `CarryoverCollectServiceImpl` | サービス  | 取得元、最新件数、全件モードかをフィールドに持つ。`fetch`、`analyze`、`saveIssues` |
+| `CarryoverAggregateService` | インタフェース | 日別集計と summary の保存。実装は `CarryoverAggregateServiceImpl` |
+| `CarryoverAggregateServiceImpl` | サービス | 集計を作り、`summary.json` を保存する |
 | `DailyTaskIssueLogic`      | インタフェース | 日々のタスク Issue の取得。実装は `DailyTaskIssueLogicImpl` |
 | `DefaultMinutesLogic`      | インタフェース | 項目ごとの標準時間の読み込み。実装は `DefaultMinutesLogicImpl` |
 | `CarryoverDataLogic`       | インタフェース | 解析結果と画面用の集計の読み書き。実装は `CarryoverDataLogicImpl` |
@@ -59,7 +67,7 @@ flowchart TB
 | `IssueStateTypes`          | 列挙型       | Issue の状態                                                         |
 | `CarryoverSourceFormatTypes` | 列挙型     | 取得元の文字列表現                                                   |
 
-取得、標準時間、読み書きの実装は domain の `DailyTaskIssueLogicImpl`、`DefaultMinutesLogicImpl`、`CarryoverDataLogicImpl` です。application はインタフェースだけを使います。
+取得、標準時間、読み書きの実装は domain の `DailyTaskIssueLogicImpl`、`DefaultMinutesLogicImpl`、`CarryoverDataLogicImpl` です。解析と集計の実装も domain です。application のサービスは、ロジックのインタフェースだけを使います。
 
 ## domain
 

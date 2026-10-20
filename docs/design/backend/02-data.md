@@ -59,12 +59,12 @@ flowchart LR
 | `DailyTaskIssueLogic.initialize(repository, token)` | 接続に必要な値。実装が `GitHubSettingsDto` を作って API を初期化する |
 | `DefaultMinutesLogic.initialize(defaultMinutesFile)` | 標準時間の設定ファイル。DAO を初期化する |
 | `CarryoverDataLogic.initialize(dataDir)`       | 出力先のディレクトリ。DAO を初期化する |
-| `CarryoverParseLogic.initialize(defaultMinutes)` | 標準時間。収集の途中で読んだあと、`collect` の中で渡す |
+| `CarryoverParseLogic.initialize(defaultMinutes)` | 標準時間。収集の途中で読んだあと、`fetch` の中で渡す |
 | `GitHubIssueApi.initialize(settings)`          | 接続設定                                        |
 | `CarryoverDataDao.initialize(dataDir)`         | 出力先のディレクトリ                            |
 | `DefaultMinutesDao.initialize(configFile)`     | 標準時間の設定ファイル                          |
 
-`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。サービスは [CarryoverSourceModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/model/CarryoverSourceModel.java) を [CarryoverPropertiesModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/model/CarryoverPropertiesModel.java) から作り、役割ごとの値だけを各ロジックへ渡します。変換は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `initialize` の中で行います。[GitHubSettingsDto](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/dto/GitHubSettingsDto.java) は [DailyTaskIssueLogicImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/DailyTaskIssueLogicImpl.java) がリポジトリとトークンから作ります。
+`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。統合サービスは [CarryoverSourceModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/model/CarryoverSourceModel.java) を [CarryoverPropertiesModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/model/CarryoverPropertiesModel.java) から作り、役割ごとの値を収集サービスと集計サービスへ渡します。各サービスが、自分が使うロジックへ必要な値だけを渡します。変換は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `initialize` の中で行います。[GitHubSettingsDto](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/dto/GitHubSettingsDto.java) は [DailyTaskIssueLogicImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/DailyTaskIssueLogicImpl.java) がリポジトリとトークンから作ります。
 
 ## 業務データの変換
 

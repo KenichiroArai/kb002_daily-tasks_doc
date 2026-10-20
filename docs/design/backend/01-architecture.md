@@ -20,7 +20,8 @@ gr002_daily-tasks/
         service/                  # CarryoverService（実装は application）
         types/                    # CommandOptionTypes、CarryoverPropertiesFormatTypes
       application/                # ユースケース
-        service/impl/             # CarryoverServiceImpl
+        service/                  # CarryoverCollectService、CarryoverAggregateService
+        service/impl/             # CarryoverServiceImpl、CarryoverCollectServiceImpl、CarryoverAggregateServiceImpl
         logic/                    # DailyTaskIssueLogic、DefaultMinutesLogic、CarryoverDataLogic、CarryoverParseLogic、CarryoverAggregateLogic
         model/                    # Issue、持ち越し項目、日別集計、標準時間、取得元
         types/                    # MinutesSourceTypes、IssueStateTypes、CarryoverSourceFormatTypes
