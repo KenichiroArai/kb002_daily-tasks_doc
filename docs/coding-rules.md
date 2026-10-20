@@ -48,6 +48,14 @@ export function statValue(stat: Stat | undefined, metric: Metric): number {
 - 機能単位で構成する（Java は機能パッケージ + 5 層、TypeScript は `src/features/<機能名>/`）
 - 依存の向きを一方向に限定し、ツール（Java は ArchUnit、TypeScript は ESLint）で検査する
 
+## 役割
+
+- 1つの型（クラス、モジュール、関数のまとまり）には、1つの役割の機能だけを置く
+- 同じモデルや同じ設定を受け取ることではまとめない
+- 分ける単位は、呼び出し側が別々に頼む機能のまとまりとする
+- 1つの操作だけを切り出したり、同じ役割の読み書きを別の型に分けたりしない
+- 一連の流れを行うサービスやコマンドは、その流れが1つの役割なら分けない
+
 ## データ
 
 - daily-tasks-git の `docs/data/` の JSON を作成・変更するのは収集ツールだけとし、画面は読み取りだけにする

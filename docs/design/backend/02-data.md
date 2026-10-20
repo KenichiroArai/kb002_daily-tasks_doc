@@ -39,14 +39,16 @@ Spring Boot の仕組みで、環境変数から上書きできます（例: `CA
 ```mermaid
 flowchart LR
   properties["CarryoverPropertiesModel"] --> source["CarryoverSourceModel"]
-  source --> settings["GitHubSettingsDto"]
-  source --> paths["dataDir と defaultMinutesFile の Path"]
+  source --> issueInit["repository と token"]
+  source --> minutesInit["defaultMinutesFile"]
+  source --> dataInit["dataDir"]
+  issueInit --> settings["GitHubSettingsDto"]
 ```
 
 | 境界                      | 型                      | 渡すもの                                           |
 | ------------------------- | ----------------------- | -------------------------------------------------- |
 | presentation → application | `CarryoverPropertiesModel` | リポジトリ、トークン、出力先、標準時間のファイル、最新件数、全件モードか |
-| application → domain      | `CarryoverSourceModel`  | リポジトリ、トークン、出力先の `Path`、標準時間ファイルの `Path` |
+| application → domain      | 役割ごとの値            | Issue 取得はリポジトリとトークン。標準時間はファイルの `Path`。解析結果と集計は出力先の `Path` |
 | domain → repository       | `GitHubSettingsDto`、`Path` | API にはリポジトリとトークン。ファイルにはパス     |
 
 受け取る側がフィールドに保持するものは次のとおりです。
@@ -54,13 +56,15 @@ flowchart LR
 | 初期化                                         | フィールド                                      |
 | ---------------------------------------------- | ----------------------------------------------- |
 | `CarryoverService.initialize(properties, full)` | 取得元（`CarryoverSourceModel`）、`recentCount`、全件モードか |
-| `CarryoverIssueLogic.initialize(source)`       | 取得元と保存先。同時に外部 API と DAO を初期化する |
+| `DailyTaskIssueLogic.initialize(repository, token)` | 接続に必要な値。実装が `GitHubSettingsDto` を作って API を初期化する |
+| `DefaultMinutesLogic.initialize(defaultMinutesFile)` | 標準時間の設定ファイル。DAO を初期化する |
+| `CarryoverDataLogic.initialize(dataDir)`       | 出力先のディレクトリ。DAO を初期化する |
 | `CarryoverParseLogic.initialize(defaultMinutes)` | 標準時間。収集の途中で読んだあと、`collect` の中で渡す |
 | `GitHubIssueApi.initialize(settings)`          | 接続設定                                        |
 | `CarryoverDataDao.initialize(dataDir)`         | 出力先のディレクトリ                            |
 | `DefaultMinutesDao.initialize(configFile)`     | 標準時間の設定ファイル                          |
 
-`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。変換は [CarryoverSourceModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/model/CarryoverSourceModel.java) のコンストラクタが [CarryoverPropertiesModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/model/CarryoverPropertiesModel.java) から行い、[GitHubSettingsDto](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/dto/GitHubSettingsDto.java) のコンストラクタが `CarryoverSourceModel` から行います。前者は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `initialize` の中で、後者は [CarryoverIssueLogicImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/CarryoverIssueLogicImpl.java) の `initialize` の中で呼びます。
+`recentCount` と全件モードかは application の差分判定で使い、domain へは渡しません。サービスは [CarryoverSourceModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/model/CarryoverSourceModel.java) を [CarryoverPropertiesModel](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/model/CarryoverPropertiesModel.java) から作り、役割ごとの値だけを各ロジックへ渡します。変換は [CarryoverServiceImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) の `initialize` の中で行います。[GitHubSettingsDto](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/dto/GitHubSettingsDto.java) は [DailyTaskIssueLogicImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/DailyTaskIssueLogicImpl.java) がリポジトリとトークンから作ります。
 
 ## 業務データの変換
 

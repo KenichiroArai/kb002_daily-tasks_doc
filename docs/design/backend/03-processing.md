@@ -22,26 +22,30 @@
 sequenceDiagram
   participant Command as CarryoverCommandImpl
   participant Service as CarryoverServiceImpl
-  participant Issue as CarryoverIssueLogic
+  participant Issue as DailyTaskIssueLogic
+  participant Minutes as DefaultMinutesLogic
+  participant Data as CarryoverDataLogic
   participant Parse as CarryoverParseLogic
   participant Aggregate as CarryoverAggregateLogic
 
   Command->>Service: initialize(properties, full)
-  Service->>Issue: initialize(source)
+  Service->>Issue: initialize(repository, token)
+  Service->>Minutes: initialize(defaultMinutesFile)
+  Service->>Data: initialize(dataDir)
   Command->>Service: collect
-  Service->>Issue: loadDefaultMinutes
+  Service->>Minutes: loadDefaultMinutes
   Service->>Parse: initialize(defaultMinutes)
-  Service->>Issue: loadIssues
+  Service->>Data: loadIssues
   Service->>Issue: fetchAllIssues
   loop 解析が必要な Issue
     Service->>Parse: parse
-    Service->>Issue: saveIssue
+    Service->>Data: saveIssue
   end
   Service->>Aggregate: aggregate
-  Service->>Issue: saveSummary
+  Service->>Data: saveSummary
 ```
 
-1. 設定を `CarryoverSourceModel` に変換し、取得元、`recentCount`、全件モードかをフィールドに保持する。取得・保存ロジックも同じ取得元で初期化し、その中で外部 API と DAO を初期化する
+1. 設定を `CarryoverSourceModel` に変換し、取得元、`recentCount`、全件モードかをフィールドに保持する。Issue の取得、標準時間の読み込み、解析結果と集計の読み書きは、それぞれが必要とする値で初期化し、その中で外部 API と DAO を初期化する
 2. 標準時間を読み込み、解析ロジックをその標準時間で初期化する。標準時間はサービスの入力ではなく、収集の途中で得る値のため、`collect` の中で初期化する
 3. 保存済みの `issues/NNNN.json` を Issue 番号の昇順（`TreeMap`）で読み込む
 4. 対象リポジトリの Issue をすべて取得する

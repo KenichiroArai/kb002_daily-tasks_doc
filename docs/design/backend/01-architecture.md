@@ -21,11 +21,11 @@ gr002_daily-tasks/
         types/                    # CommandOptionTypes、CarryoverPropertiesFormatTypes
       application/                # ユースケース
         service/impl/             # CarryoverServiceImpl
-        logic/                    # CarryoverIssueLogic、CarryoverParseLogic、CarryoverAggregateLogic
+        logic/                    # DailyTaskIssueLogic、DefaultMinutesLogic、CarryoverDataLogic、CarryoverParseLogic、CarryoverAggregateLogic
         model/                    # Issue、持ち越し項目、日別集計、標準時間、取得元
         types/                    # MinutesSourceTypes、IssueStateTypes、CarryoverSourceFormatTypes
       domain/                     # 共通ロジック
-        logic/impl/               # 取得・保存、解析、集計の実装
+        logic/impl/               # Issue の取得、標準時間、解析結果と集計の読み書き、解析、集計の実装
         repository/api/           # GitHubIssueApi
         repository/dao/           # CarryoverDataDao、DefaultMinutesDao
         dto/                      # repository と受け渡す DTO

@@ -4,20 +4,22 @@
 
 ## 処理の全体像
 
-コマンドは実行のたびに新しいサービスを取り、`initialize` してから `collect` を呼びます。サービスが 3 つのロジックに仕事を分けます。ファイルと GitHub API へのアクセスは、domain の取得・保存ロジックが DTO に変換してから repository に渡します。共通の取得元や接続設定は、各呼び出しの引数ではなく `initialize` で渡してフィールドに保持します。
+コマンドは実行のたびに新しいサービスを取り、`initialize` してから `collect` を呼びます。サービスが役割ごとのロジックに仕事を分けます。ファイルと GitHub API へのアクセスは、domain のロジックが DTO に変換してから repository に渡します。接続設定や保存先は、各呼び出しの引数ではなく `initialize` で渡して、受け取る側がフィールドに保持します。
 
 ```mermaid
 flowchart TB
   command["CarryoverCommandImpl"] --> service["CarryoverServiceImpl"]
-  service --> issueLogic["CarryoverIssueLogicImpl"]
+  service --> issueLogic["DailyTaskIssueLogicImpl"]
+  service --> minutesLogic["DefaultMinutesLogicImpl"]
+  service --> dataLogic["CarryoverDataLogicImpl"]
   service --> parseLogic["CarryoverParseLogicImpl"]
   service --> aggregateLogic["CarryoverAggregateLogicImpl"]
   issueLogic --> github["GitHubIssueApiImpl"]
-  issueLogic --> dataDao["CarryoverDataDaoImpl"]
-  issueLogic --> minutesDao["DefaultMinutesDaoImpl"]
-  issueLogic --> message["MessageLogicImpl"]
+  minutesLogic --> minutesDao["DefaultMinutesDaoImpl"]
+  dataLogic --> dataDao["CarryoverDataDaoImpl"]
+  dataLogic --> message["MessageLogicImpl"]
   dataDao --> jsonConvert["CarryoverJsonConvertLogic"]
-  parseLogic --> message["MessageLogicImpl"]
+  parseLogic --> message
   service --> message
   command --> message
 ```
@@ -40,10 +42,12 @@ flowchart TB
 | 型                         | 種類         | 役割                                                                 |
 | -------------------------- | ------------ | -------------------------------------------------------------------- |
 | `CarryoverServiceImpl`     | サービス     | 取得元、最新件数、全件モードかをフィールドに持つ。取得、差分判定、解析、保存、集計、結果のログ |
-| `CarryoverIssueLogic`      | インタフェース | 取得元と保存先をフィールドに持つ。標準時間の読み込み、Issue の取得、解析結果と集計の読み書き |
+| `DailyTaskIssueLogic`      | インタフェース | 日々のタスク Issue の取得。実装は `DailyTaskIssueLogicImpl` |
+| `DefaultMinutesLogic`      | インタフェース | 項目ごとの標準時間の読み込み。実装は `DefaultMinutesLogicImpl` |
+| `CarryoverDataLogic`       | インタフェース | 解析結果と画面用の集計の読み書き。実装は `CarryoverDataLogicImpl` |
 | `CarryoverParseLogic`      | インタフェース | 標準時間をフィールドに持つ。Issue 本文の解析。実装は `CarryoverParseLogicImpl` |
 | `CarryoverAggregateLogic`  | インタフェース | 日別集計。実装は `CarryoverAggregateLogicImpl`                      |
-| `CarryoverSourceModel`     | モデル       | domain に渡す取得元と保存先。`CarryoverPropertiesModel` から作る     |
+| `CarryoverSourceModel`     | モデル       | サービスが保持する取得元と保存先。役割ごとの値を各ロジックへ渡す     |
 | `DailyTaskIssueModel`      | モデル       | 取得した Issue（本文つき）                                           |
 | `CarryoverIssueModel`      | モデル       | 1 Issue の解析結果                                                   |
 | `CarryoverItemModel`       | モデル       | 1 行の持ち越し項目                                                   |
@@ -55,20 +59,22 @@ flowchart TB
 | `IssueStateTypes`          | 列挙型       | Issue の状態                                                         |
 | `CarryoverSourceFormatTypes` | 列挙型     | 取得元の文字列表現                                                   |
 
-`CarryoverIssueLogic` の実装は domain の `CarryoverIssueLogicImpl` です。application はこのインタフェースだけを使います。
+取得、標準時間、読み書きの実装は domain の `DailyTaskIssueLogicImpl`、`DefaultMinutesLogicImpl`、`CarryoverDataLogicImpl` です。application はインタフェースだけを使います。
 
 ## domain
 
 | 型                          | 種類         | 役割                                                                 |
 | --------------------------- | ------------ | -------------------------------------------------------------------- |
-| `CarryoverIssueLogicImpl`   | ロジック     | 取得元をフィールドに持つ。初期化時に API と DAO を初期化する。変換は変換先の型が行う |
+| `DailyTaskIssueLogicImpl`   | ロジック     | リポジトリとトークンから接続設定を作り、API を初期化する。変換は変換先の型が行う |
+| `DefaultMinutesLogicImpl`   | ロジック     | 標準時間の設定ファイルで DAO を初期化し、読み込んだ対応をモデルにする |
+| `CarryoverDataLogicImpl`    | ロジック     | 出力先で DAO を初期化する。解析結果と集計の変換は変換先の型が行う |
 | `CarryoverParseLogicImpl`   | ロジック     | 標準時間をフィールドに持つ。本文の解析。規則の詳細は [Issue 解析の仕様](../../carryover-spec.md) |
 | `CarryoverAggregateLogicImpl` | ロジック   | 日別集計。手順は [03. 収集処理](03-processing.md)                    |
 | `GitHubIssueApi`            | インタフェース | Issue 一覧の取得。実装は repository                                  |
 | `CarryoverDataDao`          | インタフェース | 解析結果と集計の JSON の読み書き                                     |
 | `DefaultMinutesDao`         | インタフェース | 標準時間の設定ファイルの読み込み                                     |
 | `GitHubIssueDto`            | DTO          | API から取り出した Issue。`toDailyTaskIssueModel` でモデルにする     |
-| `GitHubSettingsDto`         | DTO          | API の接続設定。`CarryoverSourceModel` から作る                      |
+| `GitHubSettingsDto`         | DTO          | API の接続設定。リポジトリとトークンから作る                         |
 | `CarryoverIssueDto`         | DTO          | 保存する解析結果。モデルから作り、`toCarryoverIssueModel` で戻す     |
 | `CarryoverItemDto`          | DTO          | 保存する持ち越し項目。取得元は文字列                                 |
 | `CarryoverSummaryDto`       | DTO          | 保存する日別集計。集計モデルから作る                                 |
