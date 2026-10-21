@@ -64,6 +64,11 @@ export function statValue(stat: Stat | undefined, metric: Metric): number {
 - `docs/data/` の JSON を手で編集しない
 - シークレット（`GITHUB_TOKEN` など）をコード・ログ・JSON に出さない
 
+## Javadoc（Java）
+
+- `{@inheritDoc}` は使わない。オーバーライドやインタフェースの実装でも、そのメソッドに説明と必須タグを書く
+- タグや書き方の詳細は [gr002_daily-tasks の AGENTS.md](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/AGENTS.md) の「Javadoc」に従う
+
 ## テスト
 
 - テストで GitHub API に実通信しない
