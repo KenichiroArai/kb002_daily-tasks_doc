@@ -54,8 +54,8 @@ classDiagram
     number issue
     number declaredCount
     Stat total
-    Record byItem
-    Record byOriginMonth
+    ItemStats byItem
+    ItemStats byOriginMonth
   }
   class Stat {
     number count
@@ -83,8 +83,8 @@ classDiagram
 | `issue`         | 整数                   | その日の Issue 番号                                                |
 | `declaredCount` | 数値または `null`      | Issue 本文の `残：N`（検証用）。画面では使わない                   |
 | `total`         | `Stat`                 | その日の全項目の合計                                               |
-| `byItem`        | 項目名 -> `Stat`       | 項目ごとの集計。その日に存在しない項目はキーがない                 |
-| `byOriginMonth` | `YYYY-MM` -> `Stat`    | 持ち越し元の月（項目に付いた日付の月）ごとの集計                   |
+| `byItem`        | `ItemStats`（項目名 -> `Stat`） | 項目ごとの集計。JSON の動的キーなので中身は record。その日に存在しない項目はキーがない |
+| `byOriginMonth` | `ItemStats`（`YYYY-MM` -> `Stat`） | 持ち越し元の月（項目に付いた日付の月）ごとの集計。中身は record |
 
 ### Stat（件数と残り時間）
 

@@ -86,7 +86,7 @@ flowchart LR
 | GitHub の応答 → モデル       | `GitHubIssueDto`             | `toDailyTaskIssueModel` で `DailyTaskIssueModel` にする              |
 | モデル → 保存用 DTO          | `CarryoverIssueDto`          | 件数と残り時間の合計は、項目のリストから `getCount` と `getMinutes` で求める |
 | 保存用 DTO → モデル          | `CarryoverIssueDto`          | `toCarryoverIssueModel`。`minutesSource` の文字列を `MinutesSourceTypes` にする。不明なら例外 |
-| 標準時間の Map → モデル      | `DefaultMinutesModel`        | コンストラクタで `Map<String, Double>` を受け取る                    |
+| 標準時間の DTO → モデル | `DefaultMinutesDto`      | `toDefaultMinutesModel` で `DefaultMinutesModel` にする。DAO は DTO を返す |
 | 集計モデル → DTO             | `CarryoverSummaryDto`        | 日別集計をコンストラクタで作る                                       |
 | DTO ↔ JSON                   | `CarryoverJsonConvertLogic`  | Issue は読み書きの両方。集計は JSON への書き出しだけを行う           |
 
@@ -100,11 +100,13 @@ application のモデルです。JSON の項目名との対応は [Issue 解析�
 | ---------------------- | ------------------------------------------------------------------------------------------------- |
 | `DailyTaskIssueModel`  | 番号、タイトル、状態、更新日時、本文                                                              |
 | `CarryoverIssueModel`  | 番号、タイトル、日付、状態、更新日時、対象セクション、`declaredCount`、項目のリスト             |
+| `CarryoverIssuesModel` | Issue 番号と解析結果の対応。番号で引き、番号順に辿る                                          |
 | `CarryoverItemModel`   | 項目名、持ち越し元の日付、チェック、残り時間、取得元、セクション、元の行                       |
-| `DefaultMinutesModel`  | 項目名と標準時間（分）の対応                                                                      |
+| `DefaultMinutesModel`  | 項目名と標準時間（分）の対応。`find` で引く                                                   |
 | `CarryoverSummaryModel`| `latestIssue`、項目名の一覧、日別集計                                                             |
 | `DailySummaryModel`    | 日付、Issue 番号、`declaredCount`、合計、項目ごと、持ち越し元の月ごと                           |
 | `ItemStatModel`        | 件数、残り時間、チェック済みの件数、チェック済みの残り時間                                        |
+| `ItemStatsModel`       | 項目名または月と集計値の対応。`find` で引く                                                   |
 
 `CarryoverIssueModel` は件数と残り時間の合計をフィールドに持たず、項目のリストから計算します。保存する DTO と JSON には、その計算結果を `count` と `minutes` として書きます。
 

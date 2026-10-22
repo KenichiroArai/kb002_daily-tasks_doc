@@ -58,11 +58,13 @@ flowchart TB
 | `CarryoverSourceModel`     | モデル       | サービスが保持する取得元と保存先。役割ごとの値を各ロジックへ渡す     |
 | `DailyTaskIssueModel`      | モデル       | 取得した Issue（本文つき）                                           |
 | `CarryoverIssueModel`      | モデル       | 1 Issue の解析結果                                                   |
+| `CarryoverIssuesModel`     | モデル       | Issue 番号と解析結果の対応。番号順に保持する                         |
 | `CarryoverItemModel`       | モデル       | 1 行の持ち越し項目                                                   |
-| `DefaultMinutesModel`      | モデル       | 項目ごとの標準時間                                                   |
+| `DefaultMinutesModel`      | モデル       | 項目ごとの標準時間。`find` で引く                                    |
 | `CarryoverSummaryModel`    | モデル       | 画面用の集計                                                         |
 | `DailySummaryModel`        | モデル       | 1 日分の集計。`add` で項目を足す                                     |
 | `ItemStatModel`            | モデル       | 件数と残り時間                                                       |
+| `ItemStatsModel`           | モデル       | 項目名または月と集計値の対応                                         |
 | `MinutesSourceTypes`       | 列挙型       | 残り時間の取得元（解析、標準時間、不明）                             |
 | `IssueStateTypes`          | 列挙型       | Issue の状態                                                         |
 | `CarryoverSourceFormatTypes` | 列挙型     | 取得元の文字列表現                                                   |
@@ -84,10 +86,13 @@ flowchart TB
 | `GitHubIssueDto`            | DTO          | API から取り出した Issue。`toDailyTaskIssueModel` でモデルにする     |
 | `GitHubSettingsDto`         | DTO          | API の接続設定。リポジトリとトークンから作る                         |
 | `CarryoverIssueDto`         | DTO          | 保存する解析結果。モデルから作り、`toCarryoverIssueModel` で戻す     |
+| `CarryoverIssuesDto`        | DTO          | Issue 番号と解析結果の対応。`toCarryoverIssuesModel` でモデルにする  |
 | `CarryoverItemDto`          | DTO          | 保存する持ち越し項目。取得元は文字列                                 |
 | `CarryoverSummaryDto`       | DTO          | 保存する日別集計。集計モデルから作る                                 |
 | `DailySummaryDto`           | DTO          | 1 日分の集計                                                         |
+| `DefaultMinutesDto`         | DTO          | 項目ごとの標準時間。`toDefaultMinutesModel` でモデルにする           |
 | `ItemStatDto`               | DTO          | 件数と残り時間                                                       |
+| `ItemStatsDto`              | DTO          | 項目名または月と集計値の対応                                         |
 | `TargetSectionTypes`        | 列挙型       | 対象セクション名                                                     |
 | `CarryoverParsePatternTypes`| 列挙型       | 解析の正規表現                                                       |
 | `CarryoverParseTextTypes`   | 列挙型       | 日付書式などの固定文字列                                             |
@@ -111,13 +116,14 @@ flowchart TB
 | -------------------------- | -------- | -------------------------------------------------------------------- |
 | `GitHubIssueApiImpl`       | 外部 API | 接続設定をフィールドに持つ。Issue をページングして取得し、`GitHubIssueDto` を作る |
 | `CarryoverDataDaoImpl`     | DAO      | 出力先をフィールドに持つ。`issues/NNNN.json` の読み書きと `summary.json` の書き出し |
-| `DefaultMinutesDaoImpl`    | DAO      | 設定ファイルのパスをフィールドに持つ。`default-minutes.json` を `Map<String, Double>` として読む |
+| `DefaultMinutesDaoImpl`    | DAO      | 設定ファイルのパスをフィールドに持つ。`default-minutes.json` を読み、`DefaultMinutesDto` にする |
 | `CarryoverJsonConvertLogic`| ロジック | domain の DTO と JSON 用 DTO の相互変換                              |
 | `CarryoverIssueJsonDto`    | JSON     | Issue ごとのファイルの形                                             |
 | `CarryoverItemJsonDto`     | JSON     | 項目の形                                                             |
 | `CarryoverSummaryJsonDto`  | JSON     | `summary.json` の形                                                  |
 | `DailySummaryJsonDto`      | JSON     | 1 日分の形                                                           |
 | `ItemStatJsonDto`          | JSON     | 件数と残り時間の形                                                   |
+| `ItemStatsJsonDto`         | JSON     | 項目名または月と集計値の形。JSON では動的キーのオブジェクト          |
 | `CarryoverDataFileTypes`   | 列挙型   | `issues`、`.json`、`summary.json`                                    |
 | `CarryoverDataFormatTypes` | 列挙型   | インデント、改行、4 桁ゼロ埋めの書式                                 |
 | `GitHubApiUrlTypes`        | 列挙型   | GitHub API の URL                                                    |

@@ -112,9 +112,9 @@ reducer は状態を直接変更せず、常に新しいオブジェクト（`se
 | `roundMetric`          | 丸め。`hours` は小数 2 桁、それ以外は 1 桁                                                 |
 | `formatMetric`         | 書式化（日本語ロケール）。`minutes` は整数、それ以外は小数 1 桁                            |
 | `formatMetricWithUnit` | 丸めと書式化を行い、単位（件 / 分 / 時間）を付ける                                         |
-| `groupByMonth`         | 日別データを月（`YYYY-MM`）ごとにまとめる（出現順を保つ）                                  |
-| `filterDays`           | 期間（両端を含む）で絞り込む。空文字は制限なし                                             |
-| `assignColors`         | 項目の並び順にパレットの色を割り当てる（パレットの数を超えたら先頭から繰り返す）           |
+| `groupByMonth`         | 日別データを月（`YYYY-MM`）ごとにまとめる。戻りは `DaysByMonth`（出現順を保つ）            |
+| `filterDays`           | 期間（両端を含む）で日別データを絞り込む。空文字は制限なし                                 |
+| `assignColors`         | 項目の並び順にパレットの色を割り当てる。戻りは `ItemColors`。数を超えたら先頭から繰り返す |
 | `orderSelectedItems`   | 元の並び順を保ったまま、選択した項目だけを返す                                             |
 
 対象（`target`）ごとの値の取り出し方は次のとおりです。
