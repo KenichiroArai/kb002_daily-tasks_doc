@@ -22,7 +22,6 @@ flowchart TB
   dataLogic --> dataDao["CarryoverDataDaoImpl"]
   summaryData --> dataDao
   dataLogic --> message["MessageLogicImpl"]
-  dataDao --> jsonConvert["CarryoverJsonConvertLogic"]
   parseLogic --> message
   service --> message
   command --> message
@@ -115,15 +114,14 @@ flowchart TB
 | 型                         | 種類     | 役割                                                                 |
 | -------------------------- | -------- | -------------------------------------------------------------------- |
 | `GitHubIssueApiImpl`       | 外部 API | 接続設定をフィールドに持つ。Issue をページングして取得し、`GitHubIssueDto` を作る |
-| `CarryoverDataDaoImpl`     | DAO      | 出力先をフィールドに持つ。`issues/NNNN.json` の読み書きと `summary.json` の書き出し |
+| `CarryoverDataDaoImpl`     | DAO      | 出力先をフィールドに持つ。`issues/NNNN.json` の読み書きと `summary.json` の書き出し。変換は JSON 用 DTO が行う |
 | `DefaultMinutesDaoImpl`    | DAO      | 設定ファイルのパスをフィールドに持つ。`default-minutes.json` を読み、`DefaultMinutesDto` にする |
-| `CarryoverJsonConvertLogic`| ロジック | domain の DTO と JSON 用 DTO の相互変換                              |
-| `CarryoverIssueJsonDto`    | JSON     | Issue ごとのファイルの形                                             |
-| `CarryoverItemJsonDto`     | JSON     | 項目の形                                                             |
-| `CarryoverSummaryJsonDto`  | JSON     | `summary.json` の形                                                  |
-| `DailySummaryJsonDto`      | JSON     | 1 日分の形                                                           |
-| `ItemStatJsonDto`          | JSON     | 件数と残り時間の形                                                   |
-| `ItemStatsJsonDto`         | JSON     | 項目名または月と集計値の形。JSON では動的キーのオブジェクト          |
+| `CarryoverIssueJsonDto`    | JSON     | Issue ごとのファイルの形。DTO からのコンストラクタと `toCarryoverIssueDto` |
+| `CarryoverItemJsonDto`     | JSON     | 項目の形。DTO からのコンストラクタと `toCarryoverItemDto`            |
+| `CarryoverSummaryJsonDto`  | JSON     | `summary.json` の形。DTO からのコンストラクタ                        |
+| `DailySummaryJsonDto`      | JSON     | 1 日分の形。DTO からのコンストラクタ                                 |
+| `ItemStatJsonDto`          | JSON     | 件数と残り時間の形。DTO からのコンストラクタ                         |
+| `ItemStatsJsonDto`         | JSON     | 項目名または月と集計値の形。DTO からのコンストラクタ。JSON では動的キーのオブジェクト |
 | `CarryoverDataFileTypes`   | 列挙型   | `issues`、`.json`、`summary.json`                                    |
 | `CarryoverDataFormatTypes` | 列挙型   | インデント、改行、4 桁ゼロ埋めの書式                                 |
 | `GitHubApiUrlTypes`        | 列挙型   | GitHub API の URL                                                    |

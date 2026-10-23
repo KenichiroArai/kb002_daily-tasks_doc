@@ -39,8 +39,7 @@ gr002_daily-tasks/
         api/github/               # GitHubIssueApiImpl
         dao/carryoverdata/        # CarryoverDataDaoImpl
         dao/defaultminutes/       # DefaultMinutesDaoImpl
-        dto/json/                 # Jackson のアノテーションを持つ JSON の形
-        logic/                    # CarryoverJsonConvertLogic
+        dto/json/                 # Jackson のアノテーションを持つ JSON の形。domain の DTO との変換もここ
         types/                    # 出力ファイル名、GitHub API の URL・ヘッダ
   src/main/resources/
     application.properties
@@ -57,7 +56,7 @@ gr002_daily-tasks/
 | `application/`     | 取得、解析、保存、集計の一連の流れを組み立てる                       |
 | `domain/`          | 解析、集計。モデルと DTO の変換は変換先の型が行う。repository に求めるインタフェースを持つ |
 | `infrastructure/`  | メッセージの取得。業務の判断や機能固有の設定値は持たない             |
-| `repository/`      | GitHub REST API と JSON ファイルへのアクセス                         |
+| `repository/`      | GitHub REST API と JSON ファイルへのアクセス。DTO と JSON の変換は JSON 用 DTO が行う |
 
 読み書きするファイルは daily-tasks-git にあります。jar は daily-tasks-git をカレントディレクトリにして実行します。
 

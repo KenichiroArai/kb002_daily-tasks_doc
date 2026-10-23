@@ -88,7 +88,8 @@ flowchart LR
 | 保存用 DTO → モデル          | `CarryoverIssueDto`          | `toCarryoverIssueModel`。`minutesSource` の文字列を `MinutesSourceTypes` にする。不明なら例外 |
 | 標準時間の DTO → モデル | `DefaultMinutesDto`      | `toDefaultMinutesModel` で `DefaultMinutesModel` にする。DAO は DTO を返す |
 | 集計モデル → DTO             | `CarryoverSummaryDto`        | 日別集計をコンストラクタで作る                                       |
-| DTO ↔ JSON                   | `CarryoverJsonConvertLogic`  | Issue は読み書きの両方。集計は JSON への書き出しだけを行う           |
+| DTO → JSON                   | JSON 用 DTO                  | 変換先のコンストラクタ。Issue と集計。集計は書き出しだけ             |
+| JSON → DTO                   | `CarryoverIssueJsonDto`      | `toCarryoverIssueDto`。項目は `CarryoverItemJsonDto.toCarryoverItemDto`。集計は読み戻さない |
 
 GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が domain の `GitHubIssueDto` を直接作ります。
 
@@ -116,7 +117,7 @@ application のモデルです。JSON の項目名との対応は [Issue 解析�
 
 `summary.json` や `issues/NNNN.json` の形式を変える場合は、次をあわせて行います。
 
-1. repository の JSON 用 DTO と変換を変更する
+1. repository の JSON 用 DTO（形と、DTO との変換）を変更する
 2. [Issue 解析の仕様](../../carryover-spec.md) の JSON の例を更新する
 3. 全件モード（`--full`）で再生成できることを確認する
 4. 画面の zod スキーマと [フロントエンド設計書の 02. データ設計](../frontend/02-data.md) を更新する
