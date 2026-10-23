@@ -6,9 +6,34 @@
 ## 戻り値
 
 - 戻り値は変数 `result` で定義する
-- 戻り値の変数は先頭で宣言する
+- 戻り値の変数は、メソッドまたは関数の最初の文で宣言する。コンストラクタ、`void`、テストメソッド（期待値・準備・実行・検証の順）は対象外とする
+- 値がすぐ決まらないときは、初期値を置いて後で代入するか、宣言だけ先に書いて後で代入する
 - return 文は `return result;` に統一する
-- TypeScript で対象外とするもの（式だけを返す短いアロー関数、React コンポーネントの JSX など）は mk002_daily-tasks_web-next の `AGENTS.md` を参照する
+- TypeScript で対象外とするもの（式だけを返す短いアロー関数、React コンポーネントの JSX など）と、初期値を決められず 1 回だけ代入する場合は mk002_daily-tasks_web-next の `AGENTS.md` を参照する
+
+## メソッド呼び出し
+
+デバッガで中間の値を見られるように、メソッドの戻り値をそのまま次のメソッドの呼び出し先にしない。いったん変数に受ける。引数としての単独の呼び出し（`issue.getNumber()` を別のメソッドへ渡すだけ）は分けない。
+
+```java
+// 望ましくない形式:
+this.issues = this.carryoverCollectService.getIssues().copy();
+
+// 望ましい形式:
+final CarryoverIssuesModel collectedIssues = this.carryoverCollectService.getIssues();
+this.issues = collectedIssues.copy();
+```
+
+コンストラクタの `this(...)` は先頭文でなければならない。連鎖している引数は、private な static メソッドへ切り出し、その中で変数に受ける。
+
+定型として、次はそのままにしてよい。
+
+- `Stream`（`stream` / `map` / `filter` / `flatMap` / `sorted` / `collect` / `toList` / `count` / `min` / `max` など）。ストリームを始める前の自前メソッドの戻り値（`fetchAllIssues().stream()` など）は変数に受ける
+- Builder（`HttpRequest.newBuilder()`、Jackson の `with*`、`Separators`）
+- `Comparator` の連結（`comparing` / `thenComparing` / `reversed`）
+- 文字列の定型変換（`replaceAll().strip()`）
+- TypeScript の配列 `map` / `filter` / `join` / `reduce`、`Promise.then`、zod の `z.string().regex()` など
+- テストの `expect(...).toBe()` や Testing Library のマッチャー
 
 ## 早期リターン
 

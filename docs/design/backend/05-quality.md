@@ -42,7 +42,7 @@
 
 ## コーディングルール
 
-Java と TypeScript に共通する戻り値と分岐のルールは [共通のコーディングルール](../../coding-rules.md) を参照してください。メソッドの戻り値を判定するときだけ変数に入れ、変数そのものの比較は切り出しません。
+Java と TypeScript に共通する戻り値と分岐のルールは [共通のコーディングルール](../../coding-rules.md) を参照してください。メソッドの戻り値を判定するときだけ変数に入れ、変数そのものの比較は切り出しません。戻り値の変数 `result` はメソッドの最初の文で宣言します。メソッドの戻り値に続けてメソッドを呼ばず、いったん変数に受けます。`Stream`、Builder、`Comparator` の連結、文字列の `replaceAll().strip()` は定型として残します。
 パッケージ構成、アクセス修飾子、`record` の禁止、Javadoc、テストの書き方は [gr002_daily-tasks の AGENTS.md](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/AGENTS.md) に従います。
 
 ## ビルドと実行
