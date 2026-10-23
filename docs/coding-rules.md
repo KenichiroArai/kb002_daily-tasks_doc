@@ -15,31 +15,77 @@
 - 早期リターン（ガード節）を使用し、不要なネストを避ける
 - 条件が満たされない場合は早期に `return` する。ガード節では `result` の初期値を返す
 - if-else の代わりにガード節を使い、インデントの深さを最小限に抑える
+- メインの処理を if の中へ移さない。分岐のコメントと、条件を変数へ切り出す基準は「分岐」に従う
 
 ```java
 public boolean someMethod(String input) {
-    boolean result = false;  // 先頭で戻り値変数を宣言
+    boolean result = false;
 
-    // 早期リターン（ガード節）
+    /* 入力がないか */
     if (input == null) {
+
+        // 入力がない場合
+
+        // 初期値を返す
         return result;
+
     }
 
-    // メインの処理
     result = true;
-
-    return result;  // 統一された形式で return
+    return result;
 }
 ```
 
 ```ts
 export function statValue(stat: Stat | undefined, metric: Metric): number {
   let result = 0;
+
+  /* 集計値がないか */
   if (!stat) {
+    // 集計値がない場合
+
+    // 初期値を返す
     return result;
   }
+
   result = metric === "count" ? stat.count : stat.minutes;
   return result;
+}
+```
+
+## 分岐
+
+- if、else if、else の直前に、何を判定するかを `/* コメント */` で書く
+- 分岐の中では、先に判定結果（`// 〜の場合`）、続けて処理内容（`// 〜する`）を書く
+- 条件がメソッド呼び出し、または比較の片側がメソッドの戻り値のときは、その戻り値を判定の直前の変数へ入れる。デバッガで結果を見られるようにするためである
+- boolean を返すメソッドは boolean 変数へ入れる。それ以外は戻り値の型の変数へ入れ、if はその変数を判定する
+- 変数やフィールドを直接比べているときは、別の変数へ切り出さない。デバッグ時はその変数を変えればよい
+- `instanceof` と、変数だけの複合条件も切り出さない
+- `Matcher.find()` のように状態が変わるメソッドは、1 回だけ呼んで変数に受ける
+
+```java
+/* 解析し直す必要があるか */
+final boolean needsUpdate = this.needsUpdate(stored, remoteIssue, recentFrom);
+
+if (!needsUpdate) {
+
+    // 解析し直す必要がない場合
+
+    // 次の Issue へ進む
+    continue;
+
+}
+```
+
+```java
+/* 保存済みの解析結果がないか */
+if (stored == null) {
+
+    // 保存済みの解析結果がない場合
+
+    // 解析し直す
+    return result;
+
 }
 ```
 
