@@ -59,6 +59,33 @@ flowchart LR
   features --> shared
 ```
 
+構成要素の境界は次のとおりです。`features/carryover` の外へは `index.ts` が公開する `CarryoverDashboard`、`SUMMARY_PATH`、`Summary` だけが出ます。
+
+```mermaid
+flowchart LR
+  subgraph appLayer [app]
+    appNode["ルーティング"]
+  end
+  subgraph featureLayer ["features/carryover"]
+    featureNode["機能"]
+  end
+  subgraph sharedLayer [shared]
+    sharedNode["部品と assetPath"]
+  end
+  subgraph configLayer [config]
+    configNode["site.ts"]
+  end
+  summaryJson["summary.json"]
+  recharts["Recharts"]
+
+  appNode -->|"CarryoverDashboard / SUMMARY_PATH / Summary"| featureNode
+  appNode --> sharedNode
+  appNode --> configNode
+  featureNode --> sharedNode
+  featureNode -->|"fetch"| summaryJson
+  featureNode --> recharts
+```
+
 - `shared/`・`config/` から `features/` を import しない
 - 機能の内部（`@/features/<機能名>/xxx`）を機能の外から import しない。必ず `@/features/<機能名>`（`index.ts`）を経由する
 - 同じ機能の中では相対パスで import する

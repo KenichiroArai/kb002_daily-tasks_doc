@@ -43,6 +43,36 @@ flowchart TB
 4. `buildSummaryCards` / `buildChartSpec` / `buildRanking`: 2 と 3 から表示用のデータを作る
 5. `buildChartTitle` / `buildChartNote`: 表示条件からグラフの見出しと補足を作る
 
+### 表示条件の変更
+
+表示条件を変えると、`useDashboardOptions` が reducer へ渡し、`DashboardView` が `useMemo` で `lib/` の関数を呼び直してから、カード・グラフ・表へ渡します。
+
+```mermaid
+sequenceDiagram
+  participant User as ユーザー
+  participant Controls as DashboardControls
+  participant Selector as ItemSelector
+  participant Options as useDashboardOptions
+  participant Reducer as dashboardReducer
+  participant View as DashboardView
+  participant Lib as lib
+  participant Parts as カード・グラフ・表
+
+  alt 表示・指標・集計・対象・期間
+    User->>Controls: 条件を変更
+    Controls->>Options: setOptions / setPeriod / applyPreset
+  else 項目の選択
+    User->>Selector: 選択を変更
+    Selector->>Options: toggleItem / selectAll / selectNone
+  end
+  Options->>Reducer: dispatch
+  Reducer-->>Options: 新しい状態
+  Options-->>View: options と selected
+  View->>Lib: useMemo で表示用データを作る
+  Lib-->>View: cards / spec / ranking
+  View->>Parts: props を渡す
+```
+
 ## 状態管理
 
 ### 読み込みの状態

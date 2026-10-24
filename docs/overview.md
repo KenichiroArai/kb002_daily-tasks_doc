@@ -44,6 +44,41 @@ flowchart LR
 - 画面の設計は [フロントエンド設計書](design/frontend.md) を参照してください
 - 収集ツールの設計は [バックエンド設計書](design/backend.md) を参照してください
 
+## コンポーネント
+
+実行時の構成要素は、daily-tasks-git、収集ツール（gr002）、画面（mk002）、GitHub REST API、GitHub Pages、ブラウザです。
+
+```mermaid
+flowchart LR
+  subgraph gitRepo [daily-tasks-git]
+    issues["Issue"]
+    configFile["config/default-minutes.json"]
+    dataDir["docs/data"]
+  end
+  subgraph collector [gr002_daily-tasks]
+    command["収集ツール"]
+  end
+  subgraph web [mk002_daily-tasks_web-next]
+    site["画面"]
+  end
+  githubApi["GitHub REST API"]
+  pages["GitHub Pages"]
+  browser["ブラウザ"]
+
+  issues -->|"公開"| githubApi
+  command -->|"Issue の一覧"| githubApi
+  command -->|"標準時間"| configFile
+  command -->|"issues と summary.json"| dataDir
+  site -->|"summary.json をコピー"| dataDir
+  site -->|"静的ファイル"| pages
+  browser -->|"summary.json"| pages
+```
+
+- daily-tasks-git は Issue、標準時間の設定、出力した JSON を持つ
+- 収集ツールは GitHub REST API から Issue を取り、設定を読んで JSON を書く
+- 画面は JSON を静的ファイルにし、GitHub Pages が配信する
+- ブラウザは Pages 上の `summary.json` を読む
+
 ## 収集と公開（GitHub Actions）
 
 daily-tasks-git の [update-carryover.yml](https://github.com/KenichiroArai/daily-tasks-git/blob/main/.github/workflows/update-carryover.yml) が、収集から公開までを行います。
@@ -55,6 +90,28 @@ daily-tasks-git の [update-carryover.yml](https://github.com/KenichiroArai/dail
 - mk002_daily-tasks_web-next をビルド（lint・型チェック・テストを含む）し、`out/` を GitHub Pages にデプロイします。basePath は `actions/configure-pages` の出力を環境変数 `PAGES_BASE_PATH` で渡します
 - GitHub Pages の Source は「GitHub Actions」にします
 - gr002・mk002 の変更は、次回のワークフローの実行時（スケジュールまたは手動）に反映されます
+
+配置は次のとおりです。jar の実行と静的サイトのビルドは、同じ GitHub Actions の中で順に行います。
+
+```mermaid
+flowchart TB
+  subgraph actions [GitHub Actions]
+    jar["gr002 の jar"]
+    nextBuild["mk002 の next build"]
+    outDir["out/"]
+  end
+  subgraph gitRepo [daily-tasks-git]
+    dataDir["docs/data"]
+  end
+  pages["GitHub Pages"]
+  browser["ブラウザ"]
+
+  jar -->|"JSON を書き出す"| dataDir
+  dataDir -->|"コピーしてビルド"| nextBuild
+  nextBuild --> outDir
+  outDir -->|"デプロイ"| pages
+  browser -->|"summary.json"| pages
+```
 
 ## ドキュメントの置き場所
 

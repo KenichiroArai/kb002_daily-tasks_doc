@@ -97,6 +97,62 @@ flowchart LR
 - 層の飛び越しと、処理の流れと同じ向きの参照は禁止する
 - これらの制限は [ArchitectureTest](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/test/java/kmg/gr/gr002/dailytasks/ArchitectureTest.java) で検査する（[05. 品質・運用](05-quality.md)）
 
+### コンポーネント
+
+層をコンポーネントとし、矢印はインタフェースを要求する層から、その実装がある層へ向かいます。ラベルは要求するインタフェースです。import の向きは、直前の図です。
+
+```mermaid
+flowchart TB
+  subgraph presentationLayer [presentation]
+    command["CarryoverCommandImpl"]
+  end
+  subgraph applicationLayer [application]
+    service["CarryoverServiceImpl"]
+    collect["CarryoverCollectServiceImpl"]
+    aggregate["CarryoverAggregateServiceImpl"]
+  end
+  subgraph domainLayer [domain]
+    issueLogic["DailyTaskIssueLogicImpl"]
+    minutesLogic["DefaultMinutesLogicImpl"]
+    dataLogic["CarryoverDataLogicImpl"]
+    parseLogic["CarryoverParseLogicImpl"]
+    aggregateLogic["CarryoverAggregateLogicImpl"]
+  end
+  subgraph repositoryLayer [repository]
+    githubApi["GitHubIssueApiImpl"]
+    dataDao["CarryoverDataDaoImpl"]
+    minutesDao["DefaultMinutesDaoImpl"]
+  end
+  subgraph infrastructureLayer [infrastructure]
+    message["MessageLogicImpl"]
+  end
+  githubRest["GitHub REST API"]
+  jsonFiles["docs/data の JSON"]
+  minutesFile["default-minutes.json"]
+
+  command -->|"CarryoverService"| service
+  service -->|"CarryoverCollectService"| collect
+  service -->|"CarryoverAggregateService"| aggregate
+  collect -->|"DailyTaskIssueLogic"| issueLogic
+  collect -->|"DefaultMinutesLogic"| minutesLogic
+  collect -->|"CarryoverDataLogic"| dataLogic
+  collect -->|"CarryoverParseLogic"| parseLogic
+  aggregate -->|"CarryoverAggregateLogic"| aggregateLogic
+  aggregate -->|"CarryoverDataLogic"| dataLogic
+  issueLogic -->|"GitHubIssueApi"| githubApi
+  minutesLogic -->|"DefaultMinutesDao"| minutesDao
+  dataLogic -->|"CarryoverDataDao"| dataDao
+  command -->|"MessageLogic"| message
+  service -->|"MessageLogic"| message
+  dataLogic -->|"MessageLogic"| message
+  parseLogic -->|"MessageLogic"| message
+  githubApi -->|"MessageLogic"| message
+  minutesDao -->|"MessageLogic"| message
+  githubApi -->|"Issue の一覧"| githubRest
+  dataDao -->|"issues と summary.json"| jsonFiles
+  minutesDao -->|"標準時間"| minutesFile
+```
+
 ## 起動
 
 [DailyTasksApplication](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/DailyTasksApplication.java) は `SpringApplication.run` を呼ぶだけです。`@ConfigurationPropertiesScan` で presentation の設定クラスを読み込みます。

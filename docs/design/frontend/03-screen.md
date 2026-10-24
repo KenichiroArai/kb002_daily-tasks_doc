@@ -53,6 +53,15 @@ flowchart TB
 | `error`   | 見出し「データを読み込めませんでした」と、エラーメッセージ（[02. データ設計](02-data.md)） |
 | `success` | ダッシュボード本体（`DashboardView`）                                                      |
 
+読み込みの状態は、マウントのたびに `loading` から始まり、取得と検証の結果で `success` または `error` になります。
+
+```mermaid
+stateDiagram-v2
+  [*] --> loading
+  loading --> success : 取得と検証に成功
+  loading --> error : 取得または検証に失敗
+```
+
 ### 各領域
 
 | 領域              | 内容                                                                         |

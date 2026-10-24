@@ -69,7 +69,47 @@ sequenceDiagram
 7. メモリ上の全解析結果から `summary.json` を作り直し、保存する
 8. モード、取得件数、解析件数、集計した日数、標準時間で補完した件数、時間を決められなかった件数をログに出す
 
-Issue の一覧は毎回すべて取得します。解析と保存を省くかどうかは、次の差分判定で決めます。
+Issue の一覧は毎回すべて取得します。解析と保存を省くかどうかは、次の差分判定で決めます。手順 4 の取得と、手順 6 の保存は、リポジトリまで含めると次のとおりです。
+
+### Issue の取得
+
+[GitHubIssueApiImpl#fetchAllIssues](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が、応答の件数が 100 未満になるまでページを進めます。プルリクエストは除きます。変換は `GitHubIssueDto` が行います。
+
+```mermaid
+sequenceDiagram
+  participant Collect as CarryoverCollectServiceImpl
+  participant Logic as DailyTaskIssueLogicImpl
+  participant Api as GitHubIssueApiImpl
+  participant GitHub as GitHub API
+
+  Collect->>Logic: fetchAllIssues
+  Logic->>Api: fetchAllIssues
+  loop ページごとに
+    Api->>GitHub: GET issues
+    GitHub-->>Api: JSON
+    Api->>Api: GitHubIssueDto を作る
+  end
+  Api-->>Logic: GitHubIssueDto の一覧
+  Logic-->>Collect: DailyTaskIssueModel の一覧
+```
+
+### 解析結果の保存
+
+今回解析した Issue ごとに、モデルから DTO、DTO から JSON 用 DTO へ変換して `issues/NNNN.json` へ書き出します。
+
+```mermaid
+sequenceDiagram
+  participant Collect as CarryoverCollectServiceImpl
+  participant Logic as CarryoverDataLogicImpl
+  participant Dao as CarryoverDataDaoImpl
+  participant IssueFile as JSONファイル
+
+  Collect->>Logic: saveIssue
+  Logic->>Logic: CarryoverIssueDto を作る
+  Logic->>Dao: saveIssue
+  Dao->>Dao: CarryoverIssueJsonDto を作る
+  Dao->>IssueFile: issues/NNNN.json へ書き出す
+```
 
 ## 差分判定
 
@@ -111,7 +151,7 @@ Issue の一覧は毎回すべて取得します。解析と保存を省くか�
 
 ## Issue の取得
 
-[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が GitHub REST API から Issue を取得します。接続設定は `initialize` でフィールドに保持し、`fetchAllIssues` は引数を取りません。
+[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が GitHub REST API から Issue を取得します。呼び出しの順序は、上の「Issue の取得」のシーケンス図です。接続設定は `initialize` でフィールドに保持し、`fetchAllIssues` は引数を取りません。
 
 | 項目           | 値                                                                 |
 | -------------- | ------------------------------------------------------------------ |

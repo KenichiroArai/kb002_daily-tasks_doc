@@ -29,6 +29,123 @@ flowchart TB
 
 サービスは一連の流れを行い、ロジックは個々の処理を行います。役割が複数あるサービスは、統合サービスを残して役割ごとに分けます。ロジックのメソッド同士の依存は薄く、共通のパラメータだけをフィールドで共有します。ロジックはサービスを呼びません。状態を持つサービス、ロジック、外部 API、DAO は prototype です。
 
+クラス図は、インタフェースの実現（`..|>`）と依存（`..>`）だけを示します。列挙型とメッセージの型は、下の表に置きます。
+
+### presentation と application
+
+```mermaid
+classDiagram
+  class CarryoverCommand {
+    <<interface>>
+  }
+  class CarryoverCommandImpl
+  class CarryoverService {
+    <<interface>>
+  }
+  class CarryoverServiceImpl
+  class CarryoverCollectService {
+    <<interface>>
+  }
+  class CarryoverCollectServiceImpl
+  class CarryoverAggregateService {
+    <<interface>>
+  }
+  class CarryoverAggregateServiceImpl
+  class DailyTaskIssueLogic {
+    <<interface>>
+  }
+  class DefaultMinutesLogic {
+    <<interface>>
+  }
+  class CarryoverDataLogic {
+    <<interface>>
+  }
+  class CarryoverParseLogic {
+    <<interface>>
+  }
+  class CarryoverAggregateLogic {
+    <<interface>>
+  }
+  class MessageLogic {
+    <<interface>>
+  }
+
+  CarryoverCommandImpl ..|> CarryoverCommand
+  CarryoverServiceImpl ..|> CarryoverService
+  CarryoverCollectServiceImpl ..|> CarryoverCollectService
+  CarryoverAggregateServiceImpl ..|> CarryoverAggregateService
+  CarryoverCommandImpl ..> CarryoverService
+  CarryoverCommandImpl ..> MessageLogic
+  CarryoverServiceImpl ..> CarryoverCollectService
+  CarryoverServiceImpl ..> CarryoverAggregateService
+  CarryoverServiceImpl ..> MessageLogic
+  CarryoverCollectServiceImpl ..> DailyTaskIssueLogic
+  CarryoverCollectServiceImpl ..> DefaultMinutesLogic
+  CarryoverCollectServiceImpl ..> CarryoverDataLogic
+  CarryoverCollectServiceImpl ..> CarryoverParseLogic
+  CarryoverAggregateServiceImpl ..> CarryoverAggregateLogic
+  CarryoverAggregateServiceImpl ..> CarryoverDataLogic
+```
+
+### domain と repository と infrastructure
+
+```mermaid
+classDiagram
+  class DailyTaskIssueLogic {
+    <<interface>>
+  }
+  class DailyTaskIssueLogicImpl
+  class DefaultMinutesLogic {
+    <<interface>>
+  }
+  class DefaultMinutesLogicImpl
+  class CarryoverDataLogic {
+    <<interface>>
+  }
+  class CarryoverDataLogicImpl
+  class CarryoverParseLogic {
+    <<interface>>
+  }
+  class CarryoverParseLogicImpl
+  class CarryoverAggregateLogic {
+    <<interface>>
+  }
+  class CarryoverAggregateLogicImpl
+  class GitHubIssueApi {
+    <<interface>>
+  }
+  class GitHubIssueApiImpl
+  class CarryoverDataDao {
+    <<interface>>
+  }
+  class CarryoverDataDaoImpl
+  class DefaultMinutesDao {
+    <<interface>>
+  }
+  class DefaultMinutesDaoImpl
+  class MessageLogic {
+    <<interface>>
+  }
+  class MessageLogicImpl
+
+  DailyTaskIssueLogicImpl ..|> DailyTaskIssueLogic
+  DefaultMinutesLogicImpl ..|> DefaultMinutesLogic
+  CarryoverDataLogicImpl ..|> CarryoverDataLogic
+  CarryoverParseLogicImpl ..|> CarryoverParseLogic
+  CarryoverAggregateLogicImpl ..|> CarryoverAggregateLogic
+  GitHubIssueApiImpl ..|> GitHubIssueApi
+  CarryoverDataDaoImpl ..|> CarryoverDataDao
+  DefaultMinutesDaoImpl ..|> DefaultMinutesDao
+  MessageLogicImpl ..|> MessageLogic
+  DailyTaskIssueLogicImpl ..> GitHubIssueApi
+  DefaultMinutesLogicImpl ..> DefaultMinutesDao
+  CarryoverDataLogicImpl ..> CarryoverDataDao
+  CarryoverDataLogicImpl ..> MessageLogic
+  CarryoverParseLogicImpl ..> MessageLogic
+  GitHubIssueApiImpl ..> MessageLogic
+  DefaultMinutesDaoImpl ..> MessageLogic
+```
+
 ## presentation
 
 | 型                          | 種類         | 役割                                                                 |

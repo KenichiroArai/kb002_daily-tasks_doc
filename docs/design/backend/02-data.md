@@ -93,9 +93,55 @@ flowchart LR
 
 GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が domain の `GitHubIssueDto` を直接作ります。
 
+変換メソッドを持つ型から、変換の相手への依存は次のとおりです。項目や日別集計の入れ子も、同じ型が変換します。
+
+```mermaid
+classDiagram
+  class GitHubIssueDto
+  class DailyTaskIssueModel
+  class CarryoverIssueModel
+  class CarryoverIssueDto
+  class CarryoverIssuesDto
+  class CarryoverIssuesModel
+  class CarryoverIssueJsonDto
+  class DefaultMinutesDto
+  class DefaultMinutesModel
+  class CarryoverSummaryModel
+  class CarryoverSummaryDto
+  class CarryoverSummaryJsonDto
+
+  GitHubIssueDto ..> DailyTaskIssueModel : toDailyTaskIssueModel
+  CarryoverIssueDto ..> CarryoverIssueModel : モデルとの変換
+  CarryoverIssuesDto ..> CarryoverIssuesModel : toCarryoverIssuesModel
+  CarryoverIssueJsonDto ..> CarryoverIssueDto : DTOとの変換
+  DefaultMinutesDto ..> DefaultMinutesModel : toDefaultMinutesModel
+  CarryoverSummaryDto ..> CarryoverSummaryModel : コンストラクタ
+  CarryoverSummaryJsonDto ..> CarryoverSummaryDto : コンストラクタ
+```
+
 ## モデル
 
-application のモデルです。JSON の項目名との対応は [Issue 解析の仕様](../../carryover-spec.md) を参照してください。
+application のモデルです。JSON の項目名との対応は [Issue 解析の仕様](../../carryover-spec.md) を参照してください。集約は次のとおりです。`DefaultMinutesModel` は項目名と標準時間の対応だけを持ちます。
+
+```mermaid
+classDiagram
+  class CarryoverIssuesModel
+  class CarryoverIssueModel
+  class CarryoverItemModel
+  class DefaultMinutesModel
+  class CarryoverSummaryModel
+  class DailySummaryModel
+  class ItemStatModel
+  class ItemStatsModel
+
+  CarryoverIssuesModel "1" *-- "*" CarryoverIssueModel
+  CarryoverIssueModel "1" *-- "*" CarryoverItemModel
+  CarryoverSummaryModel "1" *-- "*" DailySummaryModel
+  DailySummaryModel "1" *-- "1" ItemStatModel : total
+  DailySummaryModel "1" *-- "1" ItemStatsModel : byItem
+  DailySummaryModel "1" *-- "1" ItemStatsModel : byOriginMonth
+  ItemStatsModel "1" *-- "*" ItemStatModel
+```
 
 | 型                     | 主な項目                                                                                          |
 | ---------------------- | ------------------------------------------------------------------------------------------------- |
