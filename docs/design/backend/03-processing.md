@@ -4,7 +4,30 @@
 
 ## コマンド
 
-[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈します。収集するときは `ObjectProvider` で新しい [CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) を取り、`initialize` してから `collect`、続けて `aggregate` を呼びます。サービスは収集の設定をフィールドに持つため、実行のたびに新しいインスタンスを使います。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
+[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈します。収集するときは `ObjectProvider` で新しい [CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) を 1 回取り、`initialize` したあと、単位が続くあいだ同じインスタンスで `collect` と `aggregate` を繰り返します。単位の列と集計の追跡状態はサービスが持ちます。サービスは収集の設定をフィールドに持つため、実行のたびに新しいインスタンスを使います。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
+
+```java
+/* 収集と集計の実行 */
+service.initialize(this.properties, this.full);
+
+/* 次の単位があるか */
+boolean hasNext = service.hasNext();
+
+while (hasNext) {
+
+    // 次の単位がある場合
+
+    // その単位を収集する
+    service.collect();
+
+    // その単位までを集計して保存する
+    service.aggregate();
+
+    /* 次の単位があるか */
+    hasNext = service.hasNext();
+
+}
+```
 
 | 引数      | 定数                              | 動作                                       |
 | --------- | --------------------------------- | ------------------------------------------ |
@@ -16,9 +39,9 @@
 
 ## 収集と集計
 
-[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、取得、解析、Issue の保存をこの順で行います。`collect` は引数を取りません。設定とモードは、その前の `initialize` で役割ごとのサービスに入っています。戻り値は、解析して保存した Issue の件数です。続けて [CarryoverServiceImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、日別の集計を作り、`summary.json` を保存し、結果をログに出します。コマンドは `collect` と `aggregate` のあいだにログや例外処理を置けます。取得・解析・保存の段階はコマンドからは呼びません。
+[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) は、その単位の参照だけを取得、解析、保存します。`collect` は引数を取りません。設定とモードは、その前の `initialize` で役割ごとのサービスに入っています。戻り値は、その単位で解析して保存した Issue の件数です。続けて [CarryoverServiceImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、その単位を実行中の集計へ足し、その時点の `summary.json` を上書きし、結果をログに出します。単位の件数は `carryover.batchSize`（既定 365。1 未満のときは全件を 1 単位）です。取得・解析・保存の段階はコマンドからは呼びません。
 
-解析は保存より先にまとめて行います。解析の途中で失敗したときは、その実行で解析した Issue はまだ保存されていません。集計は、保存の前でもメモリ上の全解析結果（保存済みと今回解析したもの）を使います。
+最初の `hasNext` で、本文を持たない索引を作り、日付順に単位へ分けます。日付がない Issue は最後の単位にし、日別の行にはせず `latestIssue` だけ更新します。索引が空でも、空の集計を 1 回書くための単位を 1 つ作ります。前の単位の本文は次の単位へ残しません。
 
 ```mermaid
 sequenceDiagram
@@ -26,54 +49,28 @@ sequenceDiagram
   participant Service as CarryoverServiceImpl
   participant Collect as CarryoverCollectServiceImpl
   participant Aggregate as CarryoverAggregateServiceImpl
-  participant Issue as DailyTaskIssueLogic
-  participant Minutes as DefaultMinutesLogic
-  participant Data as CarryoverDataLogic
-  participant Parse as CarryoverParseLogic
-  participant AggregateLogic as CarryoverAggregateLogic
-
-  Command->>Service: initialize(properties, full)
-  Service->>Collect: initialize
-  Service->>Aggregate: initialize
-  Collect->>Issue: initialize(repository, token)
-  Collect->>Minutes: initialize(defaultMinutesFile)
-  Collect->>Data: initialize(dataDir)
-  Aggregate->>Data: initialize(dataDir)
-  Command->>Service: collect
-  Service->>Collect: fetch
-  Collect->>Minutes: loadDefaultMinutes
-  Collect->>Parse: initialize(defaultMinutes)
-  Collect->>Data: loadIssues
-  Collect->>Issue: fetchAllIssues
-  Service->>Collect: analyze
-  loop 解析が必要な Issue
-    Collect->>Parse: parse
+  Command->>Service: initialize
+  loop hasNext
+    Command->>Service: collect
+    Service->>Collect: その単位だけ取得・解析・保存
+    Command->>Service: aggregate
+    Service->>Aggregate: 追跡状態へ追加して summary.json を上書き
   end
-  Service->>Collect: saveIssues
-  loop 今回解析した Issue
-    Collect->>Data: saveIssue
-  end
-  Command->>Service: aggregate
-  Service->>Aggregate: aggregate
-  Aggregate->>AggregateLogic: aggregate
-  Service->>Aggregate: saveSummary
-  Aggregate->>Data: saveSummary
 ```
 
-1. 設定を `CarryoverSourceModel` に変換し、収集サービスへ取得元、`recentCount`、全件モードかを渡す。集計サービスへ保存先を渡す。それぞれが必要とする値でロジックを初期化し、その中で外部 API と DAO を初期化する。解析結果の読み書きと集計の保存は、別の `CarryoverDataLogic` を同じ保存先で初期化する
-2. 標準時間を読み込み、解析ロジックをその標準時間で初期化する。標準時間はサービスの入力ではなく、収集の途中で得る値のため、`fetch` の中で初期化する
-3. 保存済みの `issues/NNNN.json` を Issue 番号の昇順（`TreeMap`）で読み込む
-4. 対象リポジトリの Issue をすべて取得する
-5. 解析が必要な Issue だけを解析する。この時点では保存しない。解析しなかった Issue は、手順 3 の内容を集計に使う
-6. 今回解析した Issue を上書き保存する
-7. メモリ上の全解析結果から `summary.json` を作り直し、保存する
-8. モード、取得件数、解析件数、集計した日数、標準時間で補完した件数、時間を決められなかった件数をログに出す
+1. 設定を `CarryoverSourceModel` に変換し、収集サービスへ取得元、`recentCount`、全件モードかを渡す。集計サービスへ保存先を渡す。`batchSize` は統合サービスが読む
+2. 最初の単位の前に、標準時間を 1 回読み、解析ロジックを初期化する。本文を持たない索引を作成順に取り、タイトルから日付を付ける。`recentFrom` は索引の番号から決める
+3. 日付がある Issue を日付順に `batchSize` 件ずつ分け、日付がない Issue を最後の単位にする
+4. 単位の各参照について、差分判定で解析が必要な Issue だけ本文を 1 件取得して解析し、その Issue を保存する。解析しない Issue は、その番号の `issues/NNNN.json` だけ読む
+5. その単位の解析結果を、実行ごとの集計状態へ足す。日付がない Issue は最大の Issue 番号だけ更新する
+6. その時点の `summary.json` を上書きする。項目の並びと `latestIssue` は、その単位までで確定する
+7. モード、累計の取得件数、累計の解析件数、その時点の日数、累計の補完件数、時間を決められなかった件数をログに出す
 
-Issue の一覧は毎回すべて取得します。解析と保存を省くかどうかは、次の差分判定で決めます。手順 4 の取得と、手順 6 の保存は、リポジトリまで含めると次のとおりです。
+Issue の一覧は実行のたびに先頭ページから取得します。一覧の応答に含まれる本文は索引では捨て、本文が要る Issue だけ後から 1 件取得します。解析と保存を省くかどうかは、次の差分判定で決めます。
 
 ### Issue の取得
 
-[GitHubIssueApiImpl#fetchAllIssues](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が、応答の件数が 100 未満になるまでページを進めます。プルリクエストは除きます。変換は `GitHubIssueDto` が行います。
+[GitHubIssueApiImpl#fetchIssueRefs](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が、応答の件数が 100 未満になるまでページを進め、番号、タイトル、状態、`updatedAt` だけを残します。プルリクエストは除きます。本文が要る Issue は [GitHubIssueApiImpl#fetchIssue](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が 1 件取得します。変換は `GitHubIssueRefDto` と `GitHubIssueDto` が行います。
 
 ```mermaid
 sequenceDiagram
@@ -82,15 +79,20 @@ sequenceDiagram
   participant Api as GitHubIssueApiImpl
   participant GitHub as GitHub API
 
-  Collect->>Logic: fetchAllIssues
-  Logic->>Api: fetchAllIssues
+  Collect->>Logic: fetchIssueRefs
+  Logic->>Api: fetchIssueRefs
   loop ページごとに
     Api->>GitHub: GET issues
     GitHub-->>Api: JSON
-    Api->>Api: GitHubIssueDto を作る
+    Api->>Api: GitHubIssueRefDto を作る
   end
-  Api-->>Logic: GitHubIssueDto の一覧
-  Logic-->>Collect: DailyTaskIssueModel の一覧
+  Api-->>Logic: GitHubIssueRefDto の一覧
+  Logic-->>Collect: DailyTaskIssueRefModel の一覧
+  loop 本文が要る Issue
+    Collect->>Logic: fetchIssue
+    Logic->>Api: fetchIssue
+    Api->>GitHub: GET issues/番号
+  end
 ```
 
 ### 解析結果の保存
@@ -138,7 +140,7 @@ sequenceDiagram
 
 ## 集計
 
-[CarryoverAggregateLogicImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/CarryoverAggregateLogicImpl.java) が、解析結果の集まりから `CarryoverSummaryModel` を作ります。
+[CarryoverAggregateLogicImpl#add](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/CarryoverAggregateLogicImpl.java) が、日付順に渡された 1 件を実行ごとの集計状態へ足します。一括の `aggregate` も、並べ替えてから同じ `add` を呼びます。追跡状態は集計ロジックのフィールドには置かず、実行ごとに作る累積モデルが持ちます。
 
 1. 日付がある Issue を、日付の昇順、同じ日付なら Issue 番号の昇順に並べる
 2. 対象セクションが最初に現れた Issue から集計を始める。それより前の Issue は日別の行にしない
@@ -151,7 +153,7 @@ sequenceDiagram
 
 ## Issue の取得
 
-[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が GitHub REST API から Issue を取得します。呼び出しの順序は、上の「Issue の取得」のシーケンス図です。接続設定は `initialize` でフィールドに保持し、`fetchAllIssues` は引数を取りません。
+[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が GitHub REST API から Issue を取得します。呼び出しの順序は、上の「Issue の取得」のシーケンス図です。接続設定は `initialize` でフィールドに保持し、一覧の取得と 1 件取得は番号以外の引数を取りません。
 
 | 項目           | 値                                                                 |
 | -------------- | ------------------------------------------------------------------ |

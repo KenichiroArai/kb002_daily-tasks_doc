@@ -4,7 +4,32 @@
 
 ## 処理の全体像
 
-コマンドは実行のたびに新しいサービスを取り、`initialize` してから `collect`、続けて `aggregate` を呼びます。統合サービスが収集サービスと集計サービスに仕事を分け、各サービスが役割ごとのロジックを呼びます。ファイルと GitHub API へのアクセスは、domain のロジックが DTO に変換してから repository に渡します。接続設定や保存先は、各呼び出しの引数ではなく `initialize` で渡して、受け取る側がフィールドに保持します。
+コマンドは実行のたびに新しいサービスを 1 回取り、`initialize` したあと、単位が続くあいだ同じインスタンスで `collect` と `aggregate` を繰り返します。
+
+```java
+/* 収集と集計の実行 */
+service.initialize(this.properties, this.full);
+
+/* 次の単位があるか */
+boolean hasNext = service.hasNext();
+
+while (hasNext) {
+
+    // 次の単位がある場合
+
+    // その単位を収集する
+    service.collect();
+
+    // その単位までを集計して保存する
+    service.aggregate();
+
+    /* 次の単位があるか */
+    hasNext = service.hasNext();
+
+}
+```
+
+統合サービスが収集サービスと集計サービスに仕事を分け、各サービスが役割ごとのロジックを呼びます。ファイルと GitHub API へのアクセスは、domain のロジックが DTO に変換してから repository に渡します。接続設定や保存先は、各呼び出しの引数ではなく `initialize` で渡して、受け取る側がフィールドに保持します。
 
 ```mermaid
 flowchart TB
@@ -151,7 +176,7 @@ classDiagram
 | 型                          | 種類         | 役割                                                                 |
 | --------------------------- | ------------ | -------------------------------------------------------------------- |
 | `CarryoverCommand`          | インタフェース | `CommandLineRunner`。実装は `CarryoverCommandImpl`                 |
-| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize`、`collect`、`aggregate` を行う |
+| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize` と、単位ごとの `collect`、`aggregate` を行う |
 | `CarryoverService`          | インタフェース | application に求める収集と集計。実装は `CarryoverServiceImpl`      |
 | `CarryoverPropertiesModel`  | モデル       | `carryover.*` の設定。文字列と変換後の `Path` を持つ               |
 | `CommandOptionTypes`        | 列挙型       | `--full`、`--help`、`-h`                                             |
