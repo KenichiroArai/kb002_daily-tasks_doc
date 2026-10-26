@@ -47,7 +47,7 @@ ESLint と Prettier は `.next/`・`out/`・`public/data/`・`coverage/` を対�
 
 詳細は [mk002_daily-tasks_web-next の AGENTS.md](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/AGENTS.md) の「TypeScript のコーディングルール」に従います。戻り値と分岐は [共通のコーディングルール](../../coding-rules.md) を参照してください。要点は次のとおりです。
 
-- `function` 宣言と、本体が `{ }` のアロー関数は、戻り値を変数 `result` に入れ、関数の最初の文で宣言し、`return result;` で返します。ガード節では `result` の初期値を返します。初期値を決められず 1 回だけ代入する場合は、値が決まった位置で `const result` と宣言します
+- `function` 宣言と、本体が `{ }` のアロー関数は、戻り値を変数 `result` に入れ、関数の最初の文で宣言し、`return result;` で返します。ガード節では `result` の初期値を返します。読まれない初期値は置きません。初期値を決められず 1 回だけ代入する場合は、値が決まった位置で `const result` と宣言します
 - if の直前に何を判定するかを書き、分岐の中に判定結果と処理を書きます。メソッドの戻り値を判定するときだけ変数に入れ、変数そのものの比較は切り出しません
 - メソッドの戻り値に続けてメソッドを呼ばず、いったん変数に受けます。配列の `map` / `filter` / `join` / `reduce`、`Promise.then`、zod のスキーマ連鎖は定型として残します
 - `switch` で値を決める関数（`aggregate`、`dashboardReducer` など）は、分岐ごとに `result` に代入して `break` し、最後に返します

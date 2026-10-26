@@ -7,9 +7,23 @@
 
 - 戻り値は変数 `result` で定義する
 - 戻り値の変数は、メソッドまたは関数の最初の文で宣言する。コンストラクタ、`void`、テストメソッド（期待値・準備・実行・検証の順）は対象外とする
-- 値がすぐ決まらないときは、初期値を置いて後で代入するか、宣言だけ先に書いて後で代入する
+- 代入した値をその後読まないときは、その代入を書かない
+- 初期値をガード節などで返すときだけ、初期値を置く
+- 初期値を置かないときは、メソッドまたは関数の最初の文で宣言だけし、値が決まったところで代入する。Java で各経路の代入が 1 回なら `final` にする
 - return 文は `return result;` に統一する
-- TypeScript で対象外とするもの（式だけを返す短いアロー関数、React コンポーネントの JSX など）と、初期値を決められず 1 回だけ代入する場合は mk002_daily-tasks_web-next の `AGENTS.md` を参照する
+- TypeScript で対象外とするもの（式だけを返す短いアロー関数、React コンポーネントの JSX など）と、初期値を決められず 1 回だけ代入する場合は mk002_daily-tasks_web-next の `AGENTS.md` を参照する。1 回だけ代入する場合は、値が決まった位置で `const result` と宣言する
+
+```java
+// 望ましくない形式（初期値は読まれない）:
+String result = null;
+result = value.trim();
+return result;
+
+// 望ましい形式:
+final String result;
+result = value.trim();
+return result;
+```
 
 ## メソッド呼び出し
 
