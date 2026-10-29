@@ -54,7 +54,7 @@ this.issues = collectedIssues.copy();
 - 早期リターン（ガード節）を使用し、不要なネストを避ける
 - 条件が満たされない場合は早期に `return` する。ガード節では `result` の初期値を返す
 - if-else の代わりにガード節を使い、インデントの深さを最小限に抑える
-- メインの処理を if の中へ移さない。分岐のコメントと、条件を変数へ切り出す基準は「分岐」に従う
+- メインの処理を if の中へ移さない。処理コメントと、条件を変数へ切り出す基準は「処理コメント」「分岐」に従う
 
 ```java
 public boolean someMethod(String input) {
@@ -90,6 +90,22 @@ export function statValue(stat: Stat | undefined, metric: Metric): number {
   result = metric === "count" ? stat.count : stat.minutes;
   return result;
 }
+```
+
+## 処理コメント
+
+- 処理の見出し、大別となる処理は `/* コメント */` で書く
+- 個別の処理のコメントは `// コメント` で書く
+- メソッドまたは関数の中に既に `/* */` の見出し（分岐直前の判定を含む）がある場合は、同じ中の他の大別処理にも `/* */` を付ける
+- 処理が短く、コメントがないメソッドまたは関数はそのままでよい
+- 分岐の書き方は「分岐」に従う
+
+```java
+/* 標準時間の読み込み */
+final DefaultMinutesModel defaultMinutes = this.defaultMinutesLogic.loadDefaultMinutes();
+
+/* 解析ロジックの初期化 */
+this.carryoverParseLogic.initialize(defaultMinutes);
 ```
 
 ## 分岐
