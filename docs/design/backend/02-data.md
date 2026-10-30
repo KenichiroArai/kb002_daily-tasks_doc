@@ -15,7 +15,7 @@ jar のカレントディレクトリは daily-tasks-git のルートです。�
 | ファイル                         | 方向 | 内容                                       | 主な利用者                         |
 | -------------------------------- | ---- | ------------------------------------------ | ---------------------------------- |
 | `config/default-minutes.json`    | 読取 | 項目名と標準時間（分）の対応               | 時間表記がない行の補完             |
-| `docs/data/issues/NNNN.json`     | 読書 | Issue ごとの解析結果。ファイル名は `%04d`  | 差分モードの更新判定、次回の収集   |
+| `docs/data/issues/NNNN.json`     | 読書 | Issue ごとの解析結果。ファイル名は `%04d`  | 差分モードの集計再構築、次回の収集 |
 | `docs/data/summary.json`         | 書込 | 日別集計                                   | 画面（mk002）                      |
 
 Issue ごとのファイル名は [CarryoverDataFileTypes](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/types/CarryoverDataFileTypes.java) と [CarryoverDataFormatTypes](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/types/CarryoverDataFormatTypes.java) で決めます。ディレクトリ名は `issues`、拡張子は `.json`、集計ファイル名は `summary.json`、Issue ファイル名は 4 桁ゼロ埋めです。
@@ -30,7 +30,7 @@ Issue ごとのファイル名は [CarryoverDataFileTypes](https://github.com/Ke
 | `carryover.token`               | `${GITHUB_TOKEN:}`                  | GitHub API のトークン。未設定なら認証なし           |
 | `carryover.dataDir`             | `docs/data`                         | 出力先ディレクトリ                                   |
 | `carryover.defaultMinutesFile`  | `config/default-minutes.json`       | 標準時間の設定ファイル                               |
-| `carryover.recentCount`         | `10`                                | 差分モードで毎回解析し直す最新 Issue の件数          |
+| `carryover.recentCount`         | `10`                                | 差分モードで取得・解析し直す最新 Issue の件数        |
 
 Spring Boot の仕組みで、環境変数から上書きできます（例: `CARRYOVER_RECENTCOUNT`）。トークンは設定型の `toString` に含めません。
 

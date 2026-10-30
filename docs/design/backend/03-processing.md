@@ -59,18 +59,17 @@ sequenceDiagram
 ```
 
 1. 設定を `CarryoverSourceModel` に変換し、収集サービスへ取得元、`recentCount`、全件モードかを渡す。集計サービスへ保存先を渡す。`batchSize` は統合サービスが読む
-2. 最初の単位の前に、標準時間を 1 回読み、解析ロジックを初期化する。本文を持たない索引を作成順に取り、タイトルから日付を付ける。`recentFrom` は索引の番号から決める
+2. 最初の単位の前に、標準時間を 1 回読み、解析ロジックを初期化する。本文を持たない索引を取る。差分モードは最新 `recentCount` 件、全件モードはすべて。タイトルから日付を付け、`recentFrom` は索引の番号から決める
 3. 日付がある Issue を日付順に `batchSize` 件ずつ分け、日付がない Issue を最後の単位にする
 4. 単位の各参照について、差分判定で解析が必要な Issue だけ本文を 1 件取得して解析し、その Issue を保存する。解析しない Issue は、その番号の `issues/NNNN.json` だけ読む
-5. その単位の解析結果を、実行ごとの集計状態へ足す。日付がない Issue は最大の Issue 番号だけ更新する
-6. その時点の `summary.json` を上書きする。項目の並びと `latestIssue` は、その単位までで確定する
-7. モード、累計の取得件数、累計の解析件数、その時点の日数、累計の補完件数、時間を決められなかった件数をログに出す
+5. 全件モードでは、その単位の解析結果を実行ごとの集計状態へ足し、その時点の `summary.json` を上書きする。差分モードでは単位ごとの足し込みはせず、最後の単位のあとに保存済みの `issues/*.json` 全件から集計を作り直す
+6. モード、累計の取得件数、累計の解析件数、その時点の日数、累計の補完件数、時間を決められなかった件数をログに出す
 
-Issue の一覧は実行のたびに先頭ページから取得します。一覧の応答に含まれる本文は索引では捨て、本文が要る Issue だけ後から 1 件取得します。解析と保存を省くかどうかは、次の差分判定で決めます。
+差分モードの一覧は作成降順で取得し、プルリクエストを除いたうえで上限件数に達したら打ち切ります。全件モードの一覧は作成昇順で先頭ページから最後まで取得します。一覧の応答に含まれる本文は索引では捨て、本文が要る Issue だけ後から 1 件取得します。
 
 ### Issue の取得
 
-[GitHubIssueApiImpl#fetchIssueRefs](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が、応答の件数が 100 未満になるまでページを進め、番号、タイトル、状態、`updatedAt` だけを残します。プルリクエストは除きます。本文が要る Issue は [GitHubIssueApiImpl#fetchIssue](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が 1 件取得します。変換は `GitHubIssueRefDto` と `GitHubIssueDto` が行います。
+[GitHubIssueApiImpl#fetchRecentIssueRefs](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が差分モード用に最新件数まで取得し、作成昇順で返します。[GitHubIssueApiImpl#fetchIssueRefs](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が全件モード用にページを最後まで進めます。番号、タイトル、状態、`updatedAt` だけを残し、プルリクエストは除きます。本文が要る Issue は [GitHubIssueApiImpl#fetchIssue](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が 1 件取得します。変換は `GitHubIssueRefDto` と `GitHubIssueDto` が行います。
 
 ```mermaid
 sequenceDiagram
@@ -79,9 +78,14 @@ sequenceDiagram
   participant Api as GitHubIssueApiImpl
   participant GitHub as GitHub API
 
-  Collect->>Logic: fetchIssueRefs
-  Logic->>Api: fetchIssueRefs
-  loop ページごとに
+  alt 差分モード
+    Collect->>Logic: fetchRecentIssueRefs
+    Logic->>Api: fetchRecentIssueRefs
+  else 全件モード
+    Collect->>Logic: fetchIssueRefs
+    Logic->>Api: fetchIssueRefs
+  end
+  loop ページごとに上限または末尾まで
     Api->>GitHub: GET issues
     GitHub-->>Api: JSON
     Api->>Api: GitHubIssueRefDto を作る
@@ -125,7 +129,7 @@ sequenceDiagram
 | 保存済みの `updatedAt` と取得した値が違う  | 解析し直す     |
 | 上記以外                                   | 保存済みを使う |
 
-`recentFrom` は、取得した Issue 番号を大きい順に `recentCount` 件（既定は 10）取り、その中の最小の番号です。Issue が無い場合は 0 です。モードの意味（最新 10 件は毎回解析する、それより前は更新されたものだけ、集計は毎回作り直す）は [Issue 解析の仕様](../../carryover-spec.md) の「収集のモード」に書きます。
+`recentFrom` は、取得した Issue 番号を大きい順に `recentCount` 件（既定は 10）取り、その中の最小の番号です。Issue が無い場合は 0 です。差分モードでは索引自体が最新 `recentCount` 件に限定されるため、取得した Issue は実質すべて再解析対象になります。モードの意味は [Issue 解析の仕様](../../carryover-spec.md) の「収集のモード」に書きます。
 
 ## 解析
 
