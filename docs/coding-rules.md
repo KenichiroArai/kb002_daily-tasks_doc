@@ -7,6 +7,7 @@
 
 - 戻り値は変数 `result` で定義する
 - 戻り値の変数は、メソッドまたは関数の最初の文で宣言する。コンストラクタ、`void`、テストメソッド（期待値・準備・実行・検証の順）は対象外とする
+- `result` はメソッドの戻り値だけに使う。例外判定や別の意味の中間値には使わず、意味が分かる別名にする
 - 代入した値をその後読まないときは、その代入を書かない
 - 初期値をガード節などで返すときだけ、初期値を置く
 - 初期値を置かないときは、メソッドまたは関数の最初の文で宣言だけし、値が決まったところで代入する。Java で各経路の代入が 1 回なら `final` にする
@@ -23,6 +24,50 @@ return result;
 final String result;
 result = value.trim();
 return result;
+```
+
+```java
+// 望ましくない形式（読まれない初期化）:
+boolean result = false;
+result = this.hasNext();
+return result;
+
+// 望ましい形式:
+boolean result = this.hasNext();
+return result;
+```
+
+```java
+// 望ましくない形式（戻り値ではない判定に result を使い回す）:
+boolean result = this.hasNext();
+if (result) {
+    throw new IllegalStateException(message);
+}
+result = this.hasNext();
+return result;
+
+// 望ましい形式（判定は別名、戻り値だけ result）:
+final boolean result;
+final boolean remaining = this.hasNext();
+if (remaining) {
+    throw new IllegalStateException(message);
+}
+result = this.hasNext();
+return result;
+```
+
+ガード節で初期値を返す場合は、現行どおり初期化してよい（例: `int result = 0;` のあと早期 return）。
+
+## ボックス化（Java）
+
+可変長引数（SLF4J の `{}`、`String.format` の `%d` など）へ `int` を渡すとき、`Integer.valueOf(int)` は書かない。オートボックスに任せる。`Integer.valueOf(String)` のような文字列からの変換は対象外とする。
+
+```java
+// 望ましくない形式:
+LOGGER.debug(message, Integer.valueOf(issueNumber), reason);
+
+// 望ましい形式:
+LOGGER.debug(message, issueNumber, reason);
 ```
 
 ## メソッド呼び出し
