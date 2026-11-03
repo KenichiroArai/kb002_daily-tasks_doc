@@ -4,14 +4,14 @@
 
 ## コマンド
 
-[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈します。収集するときは `ObjectProvider` で新しい [CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) を 1 回取り、`initialize` したあと、単位が続くあいだ同じインスタンスで `collect` と `aggregate` を繰り返します。単位の列と集計の追跡状態はサービスが持ちます。サービスは収集の設定をフィールドに持つため、実行のたびに新しいインスタンスを使います。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
+[CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) が引数を解釈します。収集するときは `ObjectProvider` で新しい [CarryoverService](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/service/CarryoverService.java) を 1 回取り、`initialize` と `open` のあと、単位が続くあいだ同じインスタンスで `collect` と `aggregate` を繰り返します。単位の列と集計の追跡状態はサービスが持ちます。サービスは収集の設定をフィールドに持つため、実行のたびに新しいインスタンスを使います。受け付ける引数は次の 3 つだけです。不明な引数は `IllegalArgumentException` です。
 
 ```java
 /* 収集と集計の実行 */
 service.initialize(this.properties, this.full);
 
-/* 次の単位があるか */
-boolean hasNext = service.hasNext();
+/* 索引を開き、次の単位があるか */
+boolean hasNext = service.open();
 
 while (hasNext) {
 
@@ -41,7 +41,7 @@ while (hasNext) {
 
 [CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) は、その単位の参照だけを取得、解析、保存します。`collect` は引数を取りません。設定とモードは、その前の `initialize` で役割ごとのサービスに入っています。戻り値は、その単位で解析して保存した Issue の件数です。続けて [CarryoverServiceImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、その単位を実行中の集計へ足し、その時点の `summary.json` を上書きし、結果をログに出します。単位の件数は `carryover.batchSize`（既定 365。1 未満のときは全件を 1 単位）です。取得・解析・保存の段階はコマンドからは呼びません。
 
-最初の `hasNext` で、本文を持たない索引を作り、日付順に単位へ分けます。日付がない Issue は最後の単位にし、日別の行にはせず `latestIssue` だけ更新します。索引が空でも、空の集計を 1 回書くための単位を 1 つ作ります。前の単位の本文は次の単位へ残しません。
+`open` で、本文を持たない索引を作り、日付順に単位へ分けます。日付がない Issue は最後の単位にし、日別の行にはせず `latestIssue` だけ更新します。索引が空でも、空の集計を 1 回書くための単位を 1 つ作ります。前の単位の本文は次の単位へ残しません。単位が残っている状態で `open` を再度呼ぶと `IllegalStateException` です。単位を消化したあと（または単位が残っていないとき）に再度呼ぶと、状態を戻して索引を再取得します。
 
 ```mermaid
 sequenceDiagram
@@ -50,6 +50,7 @@ sequenceDiagram
   participant Collect as CarryoverCollectServiceImpl
   participant Aggregate as CarryoverAggregateServiceImpl
   Command->>Service: initialize
+  Command->>Service: open
   loop hasNext
     Command->>Service: collect
     Service->>Collect: その単位だけ取得・解析・保存

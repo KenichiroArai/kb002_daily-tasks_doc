@@ -4,14 +4,14 @@
 
 ## 処理の全体像
 
-コマンドは実行のたびに新しいサービスを 1 回取り、`initialize` したあと、単位が続くあいだ同じインスタンスで `collect` と `aggregate` を繰り返します。
+コマンドは実行のたびに新しいサービスを 1 回取り、`initialize` と `open` のあと、単位が続くあいだ同じインスタンスで `collect` と `aggregate` を繰り返します。
 
 ```java
 /* 収集と集計の実行 */
 service.initialize(this.properties, this.full);
 
-/* 次の単位があるか */
-boolean hasNext = service.hasNext();
+/* 索引を開き、次の単位があるか */
+boolean hasNext = service.open();
 
 while (hasNext) {
 
@@ -170,8 +170,8 @@ classDiagram
 | 型                          | 種類         | 役割                                                                 |
 | --------------------------- | ------------ | -------------------------------------------------------------------- |
 | `CarryoverCommand`          | インタフェース | `CommandLineRunner`。実装は `CarryoverCommandImpl`                 |
-| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize` と、単位ごとの `collect`、`aggregate` を行う |
-| `CarryoverService`          | インタフェース | application に求める収集と集計。実装は `CarryoverServiceImpl`      |
+| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize`、`open`、単位ごとの `collect`、`aggregate` を行う |
+| `CarryoverService`          | インタフェース | application に求める収集と集計（`initialize`、`open`、`hasNext`、`collect`、`aggregate`）。実装は `CarryoverServiceImpl` |
 | `CarryoverPropertiesModel`  | モデル       | `carryover.*` の設定。文字列と変換後の `Path` を持つ               |
 | `CommandOptionTypes`        | 列挙型       | `--full`、`--help`、`-h`                                             |
 | `CarryoverPropertiesFormatTypes` | 列挙型  | 設定値の文字列表現                                                   |
@@ -180,7 +180,7 @@ classDiagram
 
 | 型                         | 種類         | 役割                                                                 |
 | -------------------------- | ------------ | -------------------------------------------------------------------- |
-| `CarryoverServiceImpl`     | サービス     | 収集と集計のサービスを順に呼ぶ。全件モードか、解析結果、取得件数、保存件数をフィールドに持つ。結果のログ |
+| `CarryoverServiceImpl`     | サービス     | `open` で索引を単位に分け、収集と集計のサービスを順に呼ぶ。全件モードか、解析結果、取得件数、保存件数をフィールドに持つ。結果のログ |
 | `CarryoverCollectService`  | インタフェース | 取得、差分判定、解析、Issue の保存。実装は `CarryoverCollectServiceImpl` |
 | `CarryoverCollectServiceImpl` | サービス  | 取得元、最新件数、全件モードかをフィールドに持つ。`fetch`、`analyze`、`saveIssues` |
 | `CarryoverAggregateService` | インタフェース | 日別集計と summary の保存。実装は `CarryoverAggregateServiceImpl` |
