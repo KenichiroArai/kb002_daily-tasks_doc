@@ -180,7 +180,7 @@ classDiagram
 
 | 型                         | 種類         | 役割                                                                 |
 | -------------------------- | ------------ | -------------------------------------------------------------------- |
-| `CarryoverServiceImpl`     | サービス     | `open` で索引を単位に分け、収集と集計のサービスを順に呼ぶ。全件モードか、解析結果、取得件数、保存件数をフィールドに持つ。結果のログ |
+| `CarryoverServiceImpl`     | サービス     | `open` で索引を単位に分け、収集と集計のサービスを順に呼ぶ。全件モードか、解析結果、取得件数、保存件数をフィールドに持つ。保存件数の累計はインスタンス単位で持ち、`initialize` でのみクリアする。結果のログ |
 | `CarryoverCollectService`  | インタフェース | 取得、差分判定、解析、Issue の保存。実装は `CarryoverCollectServiceImpl` |
 | `CarryoverCollectServiceImpl` | サービス  | 取得元、最新件数、全件モードかをフィールドに持つ。`fetch`、`analyze`、`saveIssues` |
 | `CarryoverAggregateService` | インタフェース | 日別集計と summary の保存。実装は `CarryoverAggregateServiceImpl` |
