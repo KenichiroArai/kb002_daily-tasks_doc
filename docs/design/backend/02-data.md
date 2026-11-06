@@ -6,6 +6,7 @@
 
 - 設定値も業務データも、上の層から下の層へ引き継ぎます。境界では、呼ぶ側の層の型に変換してから渡します。引き継ぎは `initialize` で行い、受け取った側はフィールドに保持します。メソッドごとの対象は引数で渡します
 - JSON の形（Jackson のアノテーション）は `repository/dto/json/` だけが持ちます。domain の DTO には付けません
+- 日付・日時・パスなど意味のある値は、JSON／設定の入り口・出口以外では本来の型で保持します。日付のみは `LocalDate`、更新日時は `Instant`、持ち越し元の月は `YearMonth`、パスは `Path` です。文字列への変換・パースは API 実装、`repository/dto/json/`、設定コンストラクタに閉じます
 - 出力する JSON の項目定義は [Issue 解析の仕様](../../carryover-spec.md) に書きます。画面が読むときの検証は [フロントエンド設計書の 02. データ設計](../frontend/02-data.md) です
 
 ## 入出力ファイル
@@ -91,7 +92,15 @@ flowchart LR
 | DTO → JSON                   | JSON 用 DTO                  | 変換先のコンストラクタ。Issue と集計。集計は書き出しだけ             |
 | JSON → DTO                   | `CarryoverIssueJsonDto`      | `toCarryoverIssueDto`。項目は `CarryoverItemJsonDto.toCarryoverItemDto`。集計は読み戻さない |
 
-GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が domain の `GitHubIssueDto` を直接作ります。
+GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が domain の `GitHubIssueDto` を直接作ります。`updated_at` の文字列はここで `Instant` にします（欠落・空文字は null）。
+
+日付・日時の境界は次のとおりです。
+
+| 境界 | 型 | 内容 |
+| ---- | -- | ---- |
+| GitHub API の応答 / ファイル JSON（`*JsonDto`） | `String` | 入り口・出口。`yyyy-MM-dd`、ISO-8601（`…Z`）、月キー `yyyy-MM` |
+| domain の DTO・application のモデル | `LocalDate` / `Instant` | `date`・`originDate` は `LocalDate`、`updatedAt` は `Instant`。相互変換はコンストラクタ／`toXxx` で行う |
+| 持ち越し元の月の集計 | `YearMonth` → キー文字列 | 集計時は `YearMonth.from(originDate)` で求め、`ItemStats` のキーには ISO 文字列（`yyyy-MM`）で格納する |
 
 変換メソッドを持つ型から、変換の相手への依存は次のとおりです。項目や日別集計の入れ子も、同じ型が変換します。
 
@@ -145,15 +154,15 @@ classDiagram
 
 | 型                     | 主な項目                                                                                          |
 | ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `DailyTaskIssueModel`  | 番号、タイトル、状態、更新日時、本文                                                              |
-| `CarryoverIssueModel`  | 番号、タイトル、日付、状態、更新日時、対象セクション、`declaredCount`、項目のリスト             |
+| `DailyTaskIssueModel`  | 番号、タイトル、状態、更新日時（`Instant`）、本文                                                              |
+| `CarryoverIssueModel`  | 番号、タイトル、日付（`LocalDate`）、状態、更新日時（`Instant`）、対象セクション、`declaredCount`、項目のリスト             |
 | `CarryoverIssuesModel` | Issue 番号と解析結果の対応。番号で引き、番号順に辿る                                          |
-| `CarryoverItemModel`   | 項目名、持ち越し元の日付、チェック、残り時間、取得元、セクション、元の行                       |
+| `CarryoverItemModel`   | 項目名、持ち越し元の日付（`LocalDate`）、チェック、残り時間、取得元、セクション、元の行                       |
 | `DefaultMinutesModel`  | 項目名と標準時間（分）の対応。`find` で引く                                                   |
 | `CarryoverSummaryModel`| `latestIssue`、項目名の一覧、日別集計                                                             |
-| `DailySummaryModel`    | 日付、Issue 番号、`declaredCount`、合計、項目ごと、持ち越し元の月ごと                           |
+| `DailySummaryModel`    | 日付（`LocalDate`）、Issue 番号、`declaredCount`、合計、項目ごと、持ち越し元の月ごと（キーは `yyyy-MM`）                           |
 | `ItemStatModel`        | 件数、残り時間、チェック済みの件数、チェック済みの残り時間                                        |
-| `ItemStatsModel`       | 項目名または月と集計値の対応。`find` で引く                                                   |
+| `ItemStatsModel`       | 項目名または月（`yyyy-MM`）と集計値の対応。`find` で引く                                                   |
 
 `CarryoverIssueModel` は件数と残り時間の合計をフィールドに持たず、項目のリストから計算します。保存する DTO と JSON には、その計算結果を `count` と `minutes` として書きます。
 

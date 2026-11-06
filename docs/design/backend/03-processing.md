@@ -127,17 +127,17 @@ sequenceDiagram
 | 全件モード                                 | 解析し直す     |
 | 保存済みの JSON がない                     | 解析し直す     |
 | Issue 番号が `recentFrom` 以上             | 解析し直す     |
-| 保存済みの `updatedAt` と取得した値が違う  | 解析し直す     |
+| 保存済みの `updatedAt`（`Instant`）と取得した値が違う  | 解析し直す     |
 | 上記以外                                   | 保存済みを使う |
 
-`recentFrom` は、取得した Issue 番号を大きい順に `recentCount` 件（既定は 10）取り、その中の最小の番号です。Issue が無い場合は 0 です。差分モードでは索引自体が最新 `recentCount` 件に限定されるため、取得した Issue は実質すべて再解析対象になります。モードの意味は [Issue 解析の仕様](../../carryover-spec.md) の「収集のモード」に書きます。
+`updatedAt` は Model / domain DTO では `Instant` です。比較は等価（`Objects.equals`）だけです。`recentFrom` は、取得した Issue 番号を大きい順に `recentCount` 件（既定は 10）取り、その中の最小の番号です。Issue が無い場合は 0 です。差分モードでは索引自体が最新 `recentCount` 件に限定されるため、取得した Issue は実質すべて再解析対象になります。モードの意味は [Issue 解析の仕様](../../carryover-spec.md) の「収集のモード」に書きます。
 
 ## 解析
 
 [CarryoverParseLogicImpl#parse](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/domain/logic/impl/CarryoverParseLogicImpl.java) が、1 件の Issue から `CarryoverIssueModel` を作ります。標準時間は `initialize` で保持したフィールドを使います。
 
-- 日付はタイトルから取る
-- 対象セクションのチェックリスト行を項目にする
+- 日付はタイトルから取り、`LocalDate` として保持する
+- 対象セクションのチェックリスト行を項目にする（持ち越し元の日付も `LocalDate`）
 - 時間表記がない行は標準時間で補完する
 - 本文の `残：N` と解析件数を比べ、食い違う場合は警告ログを出す
 
@@ -150,7 +150,7 @@ sequenceDiagram
 1. 日付がある Issue を、日付の昇順、同じ日付なら Issue 番号の昇順に並べる
 2. 対象セクションが最初に現れた Issue から集計を始める。それより前の Issue は日別の行にしない
 3. 集計を始めたあとの Issue は、対象セクションが無い日も 0 件の日として残す
-4. 各項目を、その日の合計、項目ごと、持ち越し元の月ごとに足す。持ち越し元の日付が無い行は月ごとの集計に含めない。月は `originDate` の先頭 7 文字（`YYYY-MM`）とする
+4. 各項目を、その日の合計、項目ごと、持ち越し元の月ごとに足す。持ち越し元の日付が無い行は月ごとの集計に含めない。月は `YearMonth.from(originDate)` で求める（キーは `yyyy-MM`）
 5. 項目名は、延べ件数の多い順、同じ件数なら名前の昇順に並べる
 6. `latestIssue` は、渡された解析結果の Issue 番号の最大値とする。解析結果が空なら 0 とする
 
