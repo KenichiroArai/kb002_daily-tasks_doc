@@ -53,8 +53,8 @@
 
 ## コーディングルール
 
-Java と TypeScript に共通する戻り値、処理コメント、分岐のルールは [共通のコーディングルール](../../coding-rules.md) を参照してください。メソッドの戻り値を判定するときだけ変数に入れ、変数そのものの比較は切り出しません。戻り値の変数 `result` はメソッドの最初の文で宣言し、戻り値以外の判定や別意味の中間値には使いません。初期値はガード節などで返すときだけ置き、読まれない初期化は書きません。可変長引数へ `int` を渡すときの `Integer.valueOf(int)` のような不要な明示ボックス化は避けます（詳細は [共通のコーディングルール](../../coding-rules.md) の「戻り値」と「ボックス化」）。メソッドの戻り値に続けてメソッドを呼ばず、いったん変数に受けます。`Stream`、Builder、`Comparator` の連結、文字列の `replaceAll().strip()` は定型として残します。実行時に文字列を結合するときは、kmg-core の `KmgString.concat` を使います。文字列リテラル同士、または文字列リテラルと定数の `+` は、コンパイル時に 1 つの文字列になるため、そのままにします。
-パッケージ構成、アクセス修飾子、`record` の禁止、文字列の結合、Javadoc、テストの書き方は [gr002_daily-tasks の AGENTS.md](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/AGENTS.md) に従います。
+Java と TypeScript に共通する戻り値、処理コメント、分岐のルールは [共通のコーディングルール](../../coding-rules.md) を参照してください。メソッドの戻り値を判定するときだけ変数に入れ、変数そのものの比較は切り出しません。戻り値の変数 `result` はメソッドの最初の文で宣言し、戻り値以外の判定や別意味の中間値には使いません。初期値はガード節などで返すときだけ置き、読まれない初期化は書きません。可変長引数へ `int` を渡すときの `Integer.valueOf(int)` のような不要な明示ボックス化は避けます（詳細は [共通のコーディングルール](../../coding-rules.md) の「戻り値」と「ボックス化」）。メソッドの戻り値に続けてメソッドを呼ばず、いったん変数に受けます。`Stream`、Builder、`Comparator` の連結、文字列の `replaceAll().strip()` は定型として残します。実行時に文字列を結合するときは、kmg-core の `KmgString.concat` を使います。文字列リテラル同士、または文字列リテラルと定数の `+` は、コンパイル時に 1 つの文字列になるため、そのままにします。文字列の空・空白判定は `KmgString.isEmpty` / `isBlank` など、`List` / `Map` / 配列の空判定は `KmgListUtils` / `KmgMapUtils` / `KmgArrayUtils` を使います。日付・日時は書式が一致するときだけ `KmgLocalDateUtils` / `KmgLocalDateTimeUtils` を使い、JSON 境界の ISO `yyyy-MM-dd` と Instant の ISO-8601 は対応 API がないため JDK のままにします。
+パッケージ構成、アクセス修飾子、`record` の禁止、文字列の結合、kmg-core / kmg-fund のユーティリティ、Javadoc、テストの書き方は [gr002_daily-tasks の AGENTS.md](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/AGENTS.md) に従います。
 
 ## ビルドと実行
 

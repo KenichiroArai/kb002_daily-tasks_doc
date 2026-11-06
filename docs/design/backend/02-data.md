@@ -102,6 +102,8 @@ GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueApiImpl](http
 | domain の DTO・application のモデル | `LocalDate` / `Instant` | `date`・`originDate` は `LocalDate`、`updatedAt` は `Instant`。相互変換はコンストラクタ／`toXxx` で行う |
 | 持ち越し元の月の集計 | `YearMonth` → キー文字列 | 集計時は `YearMonth.from(originDate)` で求め、`ItemStats` のキーには ISO 文字列（`yyyy-MM`）で格納する |
 
+境界での日付・日時の変換は、ISO `yyyy-MM-dd` と Instant の ISO-8601 を JDK（`LocalDate.parse` / `toString` / `Instant.parse`）で行い、空文字の判定は kmg-core の `KmgString.isBlank` を使います。`KmgLocalDateUtils` は `yyyy/MM/dd` 専用のため、この境界では使いません。詳細は [gr002_daily-tasks の AGENTS.md](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/AGENTS.md) の「kmg-core / kmg-fund のユーティリティ」に従います。
+
 変換メソッドを持つ型から、変換の相手への依存は次のとおりです。項目や日別集計の入れ子も、同じ型が変換します。
 
 ```mermaid
