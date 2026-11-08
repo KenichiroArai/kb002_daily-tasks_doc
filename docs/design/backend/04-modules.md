@@ -137,6 +137,8 @@ classDiagram
   class GitHubIssueApi {
     <<interface>>
   }
+  class GitHubApiClient
+  class GitHubIssueClient
   class GitHubIssueApiImpl
   class CarryoverDataDao {
     <<interface>>
@@ -153,6 +155,8 @@ classDiagram
   CarryoverDataLogicImpl ..|> CarryoverDataLogic
   CarryoverParseLogicImpl ..|> CarryoverParseLogic
   CarryoverAggregateLogicImpl ..|> CarryoverAggregateLogic
+  GitHubIssueClient --|> GitHubApiClient
+  GitHubIssueApiImpl --|> GitHubIssueClient
   GitHubIssueApiImpl ..|> GitHubIssueApi
   CarryoverDataDaoImpl ..|> CarryoverDataDao
   DefaultMinutesDaoImpl ..|> DefaultMinutesDao
@@ -161,7 +165,7 @@ classDiagram
   CarryoverDataLogicImpl ..> CarryoverDataDao
   CarryoverDataLogicImpl ..> DailyTasksMessageSource
   CarryoverParseLogicImpl ..> DailyTasksMessageSource
-  GitHubIssueApiImpl ..> DailyTasksMessageSource
+  GitHubApiClient ..> DailyTasksMessageSource
   DefaultMinutesDaoImpl ..> DailyTasksMessageSource
 ```
 
@@ -250,7 +254,9 @@ classDiagram
 
 | 型                         | 種類     | 役割                                                                 |
 | -------------------------- | -------- | -------------------------------------------------------------------- |
-| `GitHubIssueApiImpl`       | 外部 API | 接続設定をフィールドに持つ。Issue をページングして取得し、`GitHubIssueDto` を作る |
+| `GitHubApiClient`          | 外部 API | GitHub 共通の HTTP（認証、レート制限ログ、応答検証）。Bean ではない |
+| `GitHubIssueClient`        | 外部 API | Issue の単件・ページ取得と JSON から `GitHubIssueDto` への変換。Bean ではない |
+| `GitHubIssueApiImpl`       | 外部 API | domain の `GitHubIssueApi` 実装。持ち越し固有のページングとプルリクエスト除外。HTTP／単件取得は親クラス |
 | `CarryoverDataDaoImpl`     | DAO      | 出力先をフィールドに持つ。`issues/NNNN.json` の読み書きと `summary.json` の書き出し。変換は JSON 用 DTO が行う |
 | `DefaultMinutesDaoImpl`    | DAO      | 設定ファイルのパスをフィールドに持つ。`default-minutes.json` を読み、`DefaultMinutesDto` にする |
 | `CarryoverIssueJsonDto`    | JSON     | Issue ごとのファイルの形。DTO からのコンストラクタと `toCarryoverIssueDto` |

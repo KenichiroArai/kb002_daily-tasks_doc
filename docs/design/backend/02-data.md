@@ -92,7 +92,7 @@ flowchart LR
 | DTO → JSON                   | JSON 用 DTO                  | 変換先のコンストラクタ。Issue と集計。集計は書き出しだけ             |
 | JSON → DTO                   | `CarryoverIssueJsonDto`      | `toCarryoverIssueDto`。項目は `CarryoverItemJsonDto.toCarryoverItemDto`。集計は読み戻さない |
 
-GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) が domain の `GitHubIssueDto` を直接作ります。`updated_at` の文字列はここで `Instant` にします（欠落・空文字は null）。
+GitHub API の応答は、JSON 用の型を作らず、[GitHubIssueClient](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueClient.java) が domain の `GitHubIssueDto` を直接作ります。公開入口は [GitHubIssueApiImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/api/github/GitHubIssueApiImpl.java) です。`updated_at` の文字列はここで `Instant` にします（欠落・空文字は null）。
 
 日付・日時の境界は次のとおりです。
 

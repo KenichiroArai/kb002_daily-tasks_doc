@@ -35,7 +35,7 @@ gr002_daily-tasks/
         context/                  # DailyTasksMessageSource（KmgMessageSource を継承）
         types/msg/                # Gr002GenMsgTypes、Gr002LogMsgTypes、Gr002ValMsgTypes
       repository/                 # データアクセス
-        api/github/               # GitHubIssueApiImpl
+        api/github/               # GitHubApiClient、GitHubIssueClient、GitHubIssueApiImpl
         dao/carryoverdata/        # CarryoverDataDaoImpl
         dao/defaultminutes/       # DefaultMinutesDaoImpl
         dto/json/                 # Jackson のアノテーションを持つ JSON の形。domain の DTO との変換もここ
