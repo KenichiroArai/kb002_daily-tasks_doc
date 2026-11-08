@@ -58,6 +58,42 @@ return result;
 
 ガード節で初期値を返す場合は、現行どおり初期化してよい（例: `int result = 0;` のあと早期 return）。
 
+## ローカル変数
+
+- `result` 以外のローカル変数は、使う直前で宣言する
+- 使用するブロック（分岐・try など）の内側に限り定義し、外側へ広げない
+- 代入した初期値をその後読まないときは、初期化しない
+- 例外として、戻り値 `result` は「戻り値」のとおりメソッドまたは関数の先頭で宣言する
+
+```java
+// 望ましくない形式（未使用の初期化と、使う範囲より広い宣言）:
+boolean warn = false;
+final String reset = response.headers().firstValue(resetHeader).orElse(null);
+if (remaining != null) {
+    try {
+        warn = Integer.parseInt(remaining) <= threshold;
+    } catch (NumberFormatException e) {
+        warn = false;
+    }
+    if (warn) {
+        LOGGER.warn(message, remaining, reset);
+    }
+}
+
+// 望ましい形式（使う直前・使う範囲だけ、不要な中間フラグなし）:
+if (remaining != null) {
+    final String reset = response.headers().firstValue(resetHeader).orElse(null);
+    try {
+        final int remainingCount = Integer.parseInt(remaining);
+        if (remainingCount <= threshold) {
+            LOGGER.warn(message, remaining, reset);
+        }
+    } catch (NumberFormatException e) {
+        // 警告は出さない
+    }
+}
+```
+
 ## ボックス化（Java）
 
 可変長引数（SLF4J の `{}`、`String.format` の `%d` など）へ `int` を渡すとき、`Integer.valueOf(int)` は書かない。オートボックスに任せる。`Integer.valueOf(String)` のような文字列からの変換は対象外とする。
