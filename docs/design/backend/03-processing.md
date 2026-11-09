@@ -39,7 +39,7 @@ while (hasNext) {
 
 ## 収集と集計
 
-[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) は、その単位の参照だけを取得、解析、保存します。`collect` は引数を取りません。設定とモードは、その前の `initialize` で役割ごとのサービスに入っています。戻り値は、その単位で解析して保存した Issue の件数です。続けて [CarryoverServiceImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、その単位を実行中の集計へ足し、その時点の `summary.json` を上書きし、結果をログに出します。単位の件数は `carryover.batchSize`（既定 365。1 未満のときは全件を 1 単位）です。取得・解析・保存の段階はコマンドからは呼びません。
+[CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) は、その単位の参照だけを取得、解析、保存します。`collect` は引数を取りません。設定とモードは、その前の `initialize` で役割ごとのサービスに入っています。戻り値は、その単位で解析して保存した Issue の件数です。続けて [CarryoverServiceImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、モードに応じて全件用または差分用の集計へ振り分けます。全件ではその単位を実行中の集計へ足してその時点の `summary.json` を上書きし、差分では単位を進め、最後の単位のあとに保存済みの Issue 全件から集計を作り直して `summary.json` を上書きし、結果をログに出します。単位の件数は `carryover.batchSize`（既定 365。1 未満のときは全件を 1 単位）です。取得・解析・保存の段階はコマンドからは呼びません。
 
 `open` で、本文を持たない索引を作り、[CarryoverBatchLogic](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/logic/CarryoverBatchLogic.java) に参照と `batchSize` を渡して単位へ分けます。日付がない Issue は最後の単位にし、日別の行にはせず `latestIssue` だけ更新します。索引が空でも、空の集計を 1 回書くための単位を 1 つ作ります。前の単位の本文は次の単位へ残しません。単位が残っている状態で `open` を再度呼ぶと `IllegalStateException` です。単位を消化したあと（または単位が残っていないとき）に再度呼ぶと、単位状態を戻して索引を再取得します。解析して保存した Issue の件数の累計はインスタンス単位で保持し、`initialize` でのみクリアします。
 
@@ -61,7 +61,11 @@ sequenceDiagram
     Command->>Service: collect
     Service->>Collect: その単位だけ取得・解析・保存
     Command->>Service: aggregate
-    Service->>Aggregate: 追跡状態へ追加して summary.json を上書き
+    alt 全件モード
+      Service->>Aggregate: append して summary.json を上書き
+    else 差分モードの最後の単位
+      Service->>Aggregate: rebuildFromStored して summary.json を上書き
+    end
   end
 ```
 
