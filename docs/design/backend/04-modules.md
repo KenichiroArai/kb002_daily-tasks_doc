@@ -36,6 +36,7 @@ flowchart TB
   command["CarryoverCommandImpl"] --> service["CarryoverServiceImpl"]
   service --> collectService["CarryoverCollectServiceImpl"]
   service --> aggregateService["CarryoverAggregateServiceImpl"]
+  service --> batchLogic["CarryoverBatchLogicImpl"]
   collectService --> issueLogic["DailyTaskIssueLogicImpl"]
   collectService --> minutesLogic["DefaultMinutesLogicImpl"]
   collectService --> dataLogic["CarryoverDataLogicImpl"]
@@ -91,6 +92,9 @@ classDiagram
   class CarryoverAggregateLogic {
     <<interface>>
   }
+  class CarryoverBatchLogic {
+    <<interface>>
+  }
   class DailyTasksMessageSource
 
   CarryoverCommandImpl ..|> CarryoverCommand
@@ -101,6 +105,7 @@ classDiagram
   CarryoverCommandImpl ..> DailyTasksMessageSource
   CarryoverServiceImpl ..> CarryoverCollectService
   CarryoverServiceImpl ..> CarryoverAggregateService
+  CarryoverServiceImpl ..> CarryoverBatchLogic
   CarryoverServiceImpl ..> DailyTasksMessageSource
   CarryoverCollectServiceImpl ..> DailyTaskIssueLogic
   CarryoverCollectServiceImpl ..> DefaultMinutesLogic
@@ -134,6 +139,10 @@ classDiagram
     <<interface>>
   }
   class CarryoverAggregateLogicImpl
+  class CarryoverBatchLogic {
+    <<interface>>
+  }
+  class CarryoverBatchLogicImpl
   class GitHubIssueApi {
     <<interface>>
   }
@@ -155,6 +164,7 @@ classDiagram
   CarryoverDataLogicImpl ..|> CarryoverDataLogic
   CarryoverParseLogicImpl ..|> CarryoverParseLogic
   CarryoverAggregateLogicImpl ..|> CarryoverAggregateLogic
+  CarryoverBatchLogicImpl ..|> CarryoverBatchLogic
   GitHubIssueClient --|> GitHubApiClient
   GitHubIssueApiImpl --|> GitHubIssueClient
   GitHubIssueApiImpl ..|> GitHubIssueApi
@@ -184,7 +194,7 @@ classDiagram
 
 | 型                         | 種類         | 役割                                                                 |
 | -------------------------- | ------------ | -------------------------------------------------------------------- |
-| `CarryoverServiceImpl`     | サービス     | `open` で索引を単位に分け、収集と集計のサービスを順に呼ぶ。全件モードか、解析結果、取得件数、保存件数をフィールドに持つ。保存件数の累計はインスタンス単位で持ち、`initialize` でのみクリアする。結果のログ |
+| `CarryoverServiceImpl`     | サービス     | `open` で索引を取り、`CarryoverBatchLogic` で単位に分け、収集と集計のサービスを順に呼ぶ。全件モードか、`batchSize`、解析結果、取得件数、保存件数をフィールドに持つ。保存件数の累計はインスタンス単位で持ち、`initialize` でのみクリアする。結果のログ |
 | `CarryoverCollectService`  | インタフェース | 取得、差分判定、解析、Issue の保存。実装は `CarryoverCollectServiceImpl` |
 | `CarryoverCollectServiceImpl` | サービス  | 取得元、最新件数、全件モードかをフィールドに持つ。`fetch`、`analyze`、`saveIssues` |
 | `CarryoverAggregateService` | インタフェース | 日別集計と summary の保存。実装は `CarryoverAggregateServiceImpl` |
@@ -194,6 +204,7 @@ classDiagram
 | `CarryoverDataLogic`       | インタフェース | 解析結果と画面用の集計の読み書き。実装は `CarryoverDataLogicImpl` |
 | `CarryoverParseLogic`      | インタフェース | 標準時間をフィールドに持つ。Issue 本文の解析。実装は `CarryoverParseLogicImpl` |
 | `CarryoverAggregateLogic`  | インタフェース | 日別集計。実装は `CarryoverAggregateLogicImpl`                      |
+| `CarryoverBatchLogic`      | インタフェース | 参照と `batchSize` をフィールドに持つ。単位への分割。実装は `CarryoverBatchLogicImpl` |
 | `CarryoverSourceModel`     | モデル       | サービスが保持する取得元と保存先。役割ごとの値を各ロジックへ渡す     |
 | `DailyTaskIssueModel`      | モデル       | 取得した Issue（本文つき）。`updatedAt` は `Instant`                                           |
 | `DailyTaskIssueRefModel`   | モデル       | Issue の参照（本文なし）。`date` は `LocalDate`、`updatedAt` は `Instant` |
@@ -209,7 +220,7 @@ classDiagram
 | `IssueStateTypes`          | 列挙型       | Issue の状態                                                         |
 | `CarryoverSourceFormatTypes` | 列挙型     | 取得元の文字列表現                                                   |
 
-取得、標準時間、読み書きの実装は domain の `DailyTaskIssueLogicImpl`、`DefaultMinutesLogicImpl`、`CarryoverDataLogicImpl` です。解析と集計の実装も domain です。application のサービスは、ロジックのインタフェースだけを使います。
+取得、標準時間、読み書きの実装は domain の `DailyTaskIssueLogicImpl`、`DefaultMinutesLogicImpl`、`CarryoverDataLogicImpl` です。解析、集計、参照の単位分割の実装も domain です。application のサービスは、ロジックのインタフェースだけを使います。
 
 ## domain
 
@@ -220,6 +231,7 @@ classDiagram
 | `CarryoverDataLogicImpl`    | ロジック     | 出力先で DAO を初期化する。解析結果と集計の変換は変換先の型が行う |
 | `CarryoverParseLogicImpl`   | ロジック     | 標準時間をフィールドに持つ。本文の解析。規則の詳細は [Issue 解析の仕様](../../carryover-spec.md) |
 | `CarryoverAggregateLogicImpl` | ロジック   | 日別集計。手順は [03. 収集処理](03-processing.md)                    |
+| `CarryoverBatchLogicImpl`   | ロジック     | 参照と `batchSize` をフィールドに持つ。日付順の単位分割。手順は [03. 収集処理](03-processing.md) |
 | `GitHubIssueApi`            | インタフェース | Issue 一覧の取得。実装は repository                                  |
 | `CarryoverDataDao`          | インタフェース | 解析結果と集計の JSON の読み書き                                     |
 | `DefaultMinutesDao`         | インタフェース | 標準時間の設定ファイルの読み込み                                     |

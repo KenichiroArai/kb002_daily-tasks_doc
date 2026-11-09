@@ -41,16 +41,22 @@ while (hasNext) {
 
 [CarryoverServiceImpl#collect](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) は、その単位の参照だけを取得、解析、保存します。`collect` は引数を取りません。設定とモードは、その前の `initialize` で役割ごとのサービスに入っています。戻り値は、その単位で解析して保存した Issue の件数です。続けて [CarryoverServiceImpl#aggregate](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/service/impl/CarryoverServiceImpl.java) が、その単位を実行中の集計へ足し、その時点の `summary.json` を上書きし、結果をログに出します。単位の件数は `carryover.batchSize`（既定 365。1 未満のときは全件を 1 単位）です。取得・解析・保存の段階はコマンドからは呼びません。
 
-`open` で、本文を持たない索引を作り、日付順に単位へ分けます。日付がない Issue は最後の単位にし、日別の行にはせず `latestIssue` だけ更新します。索引が空でも、空の集計を 1 回書くための単位を 1 つ作ります。前の単位の本文は次の単位へ残しません。単位が残っている状態で `open` を再度呼ぶと `IllegalStateException` です。単位を消化したあと（または単位が残っていないとき）に再度呼ぶと、単位状態を戻して索引を再取得します。解析して保存した Issue の件数の累計はインスタンス単位で保持し、`initialize` でのみクリアします。
+`open` で、本文を持たない索引を作り、[CarryoverBatchLogic](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/application/logic/CarryoverBatchLogic.java) に参照と `batchSize` を渡して単位へ分けます。日付がない Issue は最後の単位にし、日別の行にはせず `latestIssue` だけ更新します。索引が空でも、空の集計を 1 回書くための単位を 1 つ作ります。前の単位の本文は次の単位へ残しません。単位が残っている状態で `open` を再度呼ぶと `IllegalStateException` です。単位を消化したあと（または単位が残っていないとき）に再度呼ぶと、単位状態を戻して索引を再取得します。解析して保存した Issue の件数の累計はインスタンス単位で保持し、`initialize` でのみクリアします。
 
 ```mermaid
 sequenceDiagram
   participant Command as CarryoverCommandImpl
   participant Service as CarryoverServiceImpl
   participant Collect as CarryoverCollectServiceImpl
+  participant Batch as CarryoverBatchLogicImpl
   participant Aggregate as CarryoverAggregateServiceImpl
   Command->>Service: initialize
   Command->>Service: open
+  Service->>Collect: fetchRefs
+  Collect-->>Service: refs
+  Service->>Batch: initialize(refs, batchSize)
+  Service->>Batch: split
+  Batch-->>Service: batches
   loop hasNext
     Command->>Service: collect
     Service->>Collect: その単位だけ取得・解析・保存
@@ -61,7 +67,7 @@ sequenceDiagram
 
 1. 設定を `CarryoverSourceModel` に変換し、収集サービスへ取得元、`recentCount`、全件モードかを渡す。集計サービスへ保存先を渡す。`batchSize` は統合サービスが読む
 2. 最初の単位の前に、標準時間を 1 回読み、解析ロジックを初期化する。本文を持たない索引を取る。差分モードは最新 `recentCount` 件、全件モードはすべて。タイトルから日付を付け、`recentFrom` は索引の番号から決める
-3. 日付がある Issue を日付順に `batchSize` 件ずつ分け、日付がない Issue を最後の単位にする
+3. `CarryoverBatchLogic` が日付がある Issue を日付順に `batchSize` 件ずつ分け、日付がない Issue を最後の単位にする
 4. 単位の各参照について、差分判定で解析が必要な Issue だけ本文を 1 件取得して解析し、その Issue を保存する。解析しない Issue は、その番号の `issues/NNNN.json` だけ読む
 5. 全件モードでは、その単位の解析結果を実行ごとの集計状態へ足し、その時点の `summary.json` を上書きする。差分モードでは単位ごとの足し込みはせず、最後の単位のあとに保存済みの `issues/*.json` 全件から集計を作り直す
 6. モード、累計の取得件数、累計の解析件数、その時点の日数、累計の補完件数、時間を決められなかった件数をログに出す

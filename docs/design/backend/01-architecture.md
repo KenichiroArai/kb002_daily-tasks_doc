@@ -22,11 +22,11 @@ gr002_daily-tasks/
       application/                # ユースケース
         service/                  # CarryoverCollectService、CarryoverAggregateService
         service/impl/             # CarryoverServiceImpl、CarryoverCollectServiceImpl、CarryoverAggregateServiceImpl
-        logic/                    # DailyTaskIssueLogic、DefaultMinutesLogic、CarryoverDataLogic、CarryoverParseLogic、CarryoverAggregateLogic
+        logic/                    # DailyTaskIssueLogic、DefaultMinutesLogic、CarryoverDataLogic、CarryoverParseLogic、CarryoverAggregateLogic、CarryoverBatchLogic
         model/                    # Issue、持ち越し項目、日別集計、標準時間、取得元
         types/                    # MinutesSourceTypes、IssueStateTypes、CarryoverSourceFormatTypes
       domain/                     # 共通ロジック
-        logic/impl/               # Issue の取得、標準時間、解析結果と集計の読み書き、解析、集計の実装
+        logic/impl/               # Issue の取得、標準時間、解析結果と集計の読み書き、解析、集計、参照の単位分割の実装
         repository/api/           # GitHubIssueApi
         repository/dao/           # CarryoverDataDao、DefaultMinutesDao
         dto/                      # repository と受け渡す DTO
@@ -116,6 +116,7 @@ flowchart TB
     dataLogic["CarryoverDataLogicImpl"]
     parseLogic["CarryoverParseLogicImpl"]
     aggregateLogic["CarryoverAggregateLogicImpl"]
+    batchLogic["CarryoverBatchLogicImpl"]
   end
   subgraph repositoryLayer [repository]
     githubApi["GitHubIssueApiImpl"]
@@ -132,6 +133,7 @@ flowchart TB
   command -->|"CarryoverService"| service
   service -->|"CarryoverCollectService"| collect
   service -->|"CarryoverAggregateService"| aggregate
+  service -->|"CarryoverBatchLogic"| batchLogic
   collect -->|"DailyTaskIssueLogic"| issueLogic
   collect -->|"DefaultMinutesLogic"| minutesLogic
   collect -->|"CarryoverDataLogic"| dataLogic
