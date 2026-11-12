@@ -26,7 +26,6 @@ mk002_daily-tasks_web-next/
         lib/                 # 純粋関数（集計、グラフ用データ、文言）
         hooks/               # 状態管理とデータ読み込みのフック
         components/          # 機能の画面部品
-        testing/             # テスト用のデータ（fixtures）
     shared/
       components/ui/         # Panel、Select、Button、Card、DateRange、Swatch
       components/layout/     # Header、Footer、PageContainer
@@ -35,6 +34,17 @@ mk002_daily-tasks_web-next/
       types/                 # LoadState
     config/site.ts           # サイト名、リポジトリの URL など
     styles/globals.css       # CSS 変数と要素の共通スタイル
+  tests/                     # Vitest テスト（src/ をミラー）
+    features/carryover/
+      api/
+      components/
+      hooks/
+      lib/
+      fixtures.ts            # テスト用のデータ
+    shared/
+      components/
+      hooks/
+      lib/
 ```
 
 各フォルダの役割は次のとおりです。
@@ -118,9 +128,10 @@ flowchart LR
 Xxx/
   Xxx.tsx          # コンポーネント本体
   Xxx.module.css   # スタイル（CSS Modules）
-  Xxx.test.tsx     # テスト（Testing Library）
   index.ts         # export
 ```
+
+テストは `tests/` 側に同じ相対パスで置きます（例: `tests/features/carryover/components/Xxx/Xxx.test.tsx`）。
 
 ## 静的エクスポート
 

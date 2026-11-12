@@ -13,8 +13,8 @@
 | フック（`useAsync`）       | Vitest + Testing Library | 成功・失敗と、アンマウント時の中断・中断後の結果を捨てることを検証する            |
 | コンポーネント             | Vitest + Testing Library | 表示内容と、操作（`user-event`）に対するコールバックを検証する                    |
 
-- テストファイルは対象と同じフォルダに `*.test.ts(x)` で置きます
-- テスト用のデータは [features/carryover/testing/fixtures.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/testing/fixtures.ts) の関数で作ります
+- テストファイルは `tests/` に `src/` と同じ相対パスで `*.test.ts(x)` として置きます
+- テスト用のデータは [tests/features/carryover/fixtures.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/tests/features/carryover/fixtures.ts) の関数で作ります
 
 | 関数            | 内容                                           |
 | --------------- | ---------------------------------------------- |
@@ -27,7 +27,7 @@
 [vitest.config.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/vitest.config.ts) と [vitest.setup.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/vitest.setup.ts) で次のように設定しています。
 
 - 環境は `jsdom`、`globals: true`
-- 対象は `src/**/*.test.{ts,tsx}`
+- 対象は `tests/**/*.test.{ts,tsx}`
 - `tsconfig` のパスエイリアス（`@/`）を解決する
 - CSS Modules のクラス名はスコープを付けない（`non-scoped`）ため、テストでクラス名を指定できる
 - `@testing-library/jest-dom` のマッチャーを読み込み、各テストの後に `cleanup()` を行う
@@ -106,10 +106,10 @@ flowchart TB
 
 ## 新しい機能を追加する手順
 
-1. `src/features/<機能名>/` を `carryover` と同じ構成（`index.ts`、`api/`、`model/`、`constants/`、`lib/`、`hooks/`、`components/`、`testing/`）で作る
+1. `src/features/<機能名>/` を `carryover` と同じ構成（`index.ts`、`api/`、`model/`、`constants/`、`lib/`、`hooks/`、`components/`）で作る
 2. 機能の外で使うものだけを `index.ts` から export する
 3. データを読み込む場合は `model/` に zod スキーマを置き、`api/` で取得と検証を行う。`public/` のファイルは `assetPath()` で参照する
-4. 計算は `lib/` の純粋関数にし、テストを同じフォルダに置く
+4. 計算は `lib/` の純粋関数にし、テストは `tests/features/<機能名>/` に `src/` をミラーして置く（フィクスチャは `tests/features/<機能名>/fixtures.ts`）
 5. 機能に依存しない部品は `shared/` に置く（`shared/` から `features/` は import しない）
 6. `src/app/<ルート>/page.tsx` を作り、`@/features/<機能名>` から画面のコンポーネントを呼び出す
 7. 本設計書に章または節を追加する

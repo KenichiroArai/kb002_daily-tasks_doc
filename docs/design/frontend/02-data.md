@@ -168,5 +168,5 @@ classDiagram
 
 1. Java 側の出力を変更し、全件モード（`--full`）で再生成できることを確認する
 2. `model/summary.ts` のスキーマを変更する
-3. `testing/fixtures.ts` のテスト用データと、関係するテストを更新する
+3. `tests/features/carryover/fixtures.ts` のテスト用データと、関係するテストを更新する
 4. 本章のスキーマの表を更新する
