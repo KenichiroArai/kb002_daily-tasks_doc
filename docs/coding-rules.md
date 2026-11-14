@@ -12,7 +12,7 @@
 - 初期値をガード節などで返すときだけ、初期値を置く
 - 初期値を置かないときは、メソッドまたは関数の最初の文で宣言だけし、値が決まったところで代入する。Java で各経路の代入が 1 回なら `final` にする
 - return 文は `return result;` に統一する
-- TypeScript で対象外とするもの（式だけを返す短いアロー関数、React コンポーネントの JSX など）と、初期値を決められず 1 回だけ代入する場合は mk002_daily-tasks_web-next の `AGENTS.md` を参照する。1 回だけ代入する場合は、値が決まった位置で `const result` と宣言する
+- TypeScript で対象外とするもの（式だけを返す短いアロー関数、React コンポーネントの JSX など）は mk002_daily-tasks_web-next の `AGENTS.md` を参照する。TypeScript で初期値を置かないときは先頭で `let result` を宣言し、値が決まったところで代入する。例外を投げる検証のあとに値が決まる場合も同様とし、分かりやすさのため中間変数を置き、`const result` に無理にまとめない
 
 ```java
 // 望ましくない形式（初期値は読まれない）:
@@ -57,6 +57,23 @@ return result;
 ```
 
 ガード節で初期値を返す場合は、現行どおり初期化してよい（例: `int result = 0;` のあと早期 return）。
+
+```ts
+// 望ましい形式（例外を投げる検証のあとも先頭で宣言）:
+export async function fetchSummary(...): Promise<Summary> {
+  let result: Summary;
+  const response = await fetcher(...);
+  if (!response.ok) {
+    throw new Error(...);
+  }
+  const parsed = summarySchema.safeParse(await response.json());
+  if (!parsed.success) {
+    throw new Error(...);
+  }
+  result = parsed.data;
+  return result;
+}
+```
 
 ## ローカル変数
 
