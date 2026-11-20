@@ -24,7 +24,7 @@ mk002_daily-tasks_web-next/
         model/               # 型と zod スキーマ、表示条件の型
         constants/           # ラベル、配色、期間のプリセット
         lib/                 # 純粋関数（集計、グラフ用データ、文言）
-        hooks/               # 状態管理とデータ読み込みのフック
+        hooks/               # 状態管理とデータ読み込みのフック（フック専用の reducer も置く）
         components/          # 機能の画面部品
     shared/
       components/ui/         # Panel、Select、Button、Card、DateRange、Swatch

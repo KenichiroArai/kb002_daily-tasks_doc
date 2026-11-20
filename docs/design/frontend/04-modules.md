@@ -107,6 +107,13 @@ type LoadState<T> =
 
 reducer は状態を直接変更せず、常に新しいオブジェクト（`selected` は新しい `Set`）を返します。
 
+#### reducer を `hooks/` に置く理由
+
+- `useDashboardOptions` が `useReducer` に渡す専用の部品なので、同じ `hooks/` に置きます。
+- reducer は React のフックを使わない純粋関数です。フックを動かさずに、入力と出力だけで単体テストできます。
+- `useDashboardOptions` 専用の内部部品なので、`hooks/index.ts` では公開しません。
+- `lib/` は複数の場所から使う計算を置く場所です。reducer は `hooks/` の中でしか使わないため、`lib/` には置きません。
+
 ## フック
 
 | フック                | 場所                                                                                                                                                      | 役割                                                                                                                                                       |
@@ -114,7 +121,7 @@ reducer は状態を直接変更せず、常に新しいオブジェクト（`se
 | `useAsync`            | [shared/hooks/useAsync.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/shared/hooks/useAsync.ts)                            | 非同期処理をマウント時に実行し `LoadState` を返す。loader に `AbortSignal` を渡し、アンマウント時に中断して結果を捨てる。Error 以外の失敗は `Error` に包む |
 | `useCarryoverSummary` | [hooks/useCarryoverSummary.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/useCarryoverSummary.ts) | `useAsync` で `fetchSummary` に `signal` を渡して summary.json を読み込む。loader はモジュールの定数にして参照を安定させる                                 |
 | `useQueryOptions`     | [hooks/useQueryOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/useQueryOptions.ts)         | 初回の描画時に 1 回だけ URL クエリを読み取る。`window` がない環境では空の条件を返す                                                                        |
-| `useDashboardOptions` | [hooks/useDashboardOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/useDashboardOptions.ts) | reducer を包み、`options`・`selected` と操作関数を返す                                                                                                     |
+| `useDashboardOptions` | [hooks/useDashboardOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/useDashboardOptions.ts) | reducer を包み、`options`・`selected` と操作関数を返す。reducer（`dashboardReducer`）は内部用で `hooks/index.ts` から公開しない                                                                                                     |
 
 `useDashboardOptions` が返す操作関数は次のとおりです。すべて `useCallback` で参照を安定させています。
 
