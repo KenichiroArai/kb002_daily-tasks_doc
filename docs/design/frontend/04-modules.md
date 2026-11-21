@@ -40,7 +40,7 @@ flowchart TB
 1. `assignColors(summary.items)`: 項目ごとの色
 2. `orderSelectedItems(summary.items, selected)`: 選択中の項目（元の並び順）
 3. `filterDays(summary.days, from, to)`: 期間内の日別データ
-4. `buildSummaryCards` / `buildChartSpec` / `buildRanking`: 2 と 3 から表示用のデータを作る
+4. `buildSummaryCards` / `buildChartSpec` / `buildRanking`: 2 と 3 から表示用のデータを作る（`buildSummaryCards` は `{ days, items, options }` を渡す）
 5. `buildChartTitle` / `buildChartNote`: 表示条件からグラフの見出しと補足を作る
 
 ### 表示条件の変更
@@ -189,6 +189,20 @@ type ChartSpec = {
 | `buildChartTitle` | グラフの見出し（[03. 画面設計](03-screen.md)） |
 | `buildChartNote`  | グラフの補足。該当しない場合は空文字           |
 
+### summaryCards/（サマリカード）
+
+`buildSummaryCards({ days, items, options })` が各カード用の関数を呼び、`SummaryCardData[]`（ラベル・値・補足）を返します。期間内にデータがなければ「データなし」の 1 枚だけです。カードを増やすときはファイルと関数を追加し、オーケストレータに並べます。
+
+| ファイル               | 関数                     | 内容                         |
+| ---------------------- | ------------------------ | ---------------------------- |
+| `buildSummaryCards.ts` | `buildSummaryCards`      | 空データの判定とカードの並べ |
+| `emptyCard.ts`         | `buildEmptyCard`         | データなしカード             |
+| `latestCountCard.ts`   | `buildLatestCountCard`   | 最新の残（件数）             |
+| `latestHoursCard.ts`   | `buildLatestHoursCard`   | 最新の残り時間               |
+| `periodAverageCard.ts` | `buildPeriodAverageCard` | 期間平均                     |
+| `maxCard.ts`           | `buildMaxCard`           | 最大                         |
+| `minCard.ts`           | `buildMinCard`           | 最小                         |
+
 ### その他
 
 | ファイル          | 関数                | 内容                                                                                                      |
@@ -196,7 +210,6 @@ type ChartSpec = {
 | `period.ts`       | `presetPeriod`      | 最新日を終わりとする直近 N 日間の期間。N が 0 なら全期間。データがなければ空の期間。日付は UTC で計算する |
 | `queryOptions.ts` | `parseQueryOptions` | クエリ文字列から `view` / `metric` / `agg` / `target` を読み取る。想定外の値は無視する                    |
 | `ranking.ts`      | `buildRanking`      | 項目ごとの最新・平均・最大・最小・合計。最新の大きい順、同じなら平均の大きい順                            |
-| `summaryCards.ts` | `buildSummaryCards` | サマリカードの内容（ラベル・値・補足）。データがなければ「データなし」の 1 枚                             |
 
 ## コンポーネント
 
