@@ -16,6 +16,7 @@ flowchart TB
   subgraph libLayer [lib]
     filterDays
     assignColors
+    itemsWithValueInPeriod
     orderSelectedItems
     buildSummaryCards
     buildChartSpec
@@ -37,11 +38,12 @@ flowchart TB
 
 `DashboardView` での計算の順序は次のとおりです。
 
-1. `assignColors(summary.items)`: 項目ごとの色
-2. `orderSelectedItems(summary.items, selected)`: 選択中の項目（元の並び順）
-3. `filterDays(summary.days, from, to)`: 期間内の日別データ
-4. `buildSummaryCards` / `buildChartSpec` / `buildRanking`: 2 と 3 から表示用のデータを作る（`buildSummaryCards` は `{ days, items, options }` を渡す）
-5. `buildChartTitle` / `buildChartNote`: 表示条件からグラフの見出しと補足を作る
+1. `assignColors(summary.items)`: 項目ごとの色（全項目基準。期間や表示の有無で色は変えない）
+2. `filterDays(summary.days, from, to)`: 期間内の日別データ
+3. `itemsWithValueInPeriod(days, summary.items, metric, target)`: 期間内で値が正の項目（`ItemSelector` の母集団）
+4. `orderSelectedItems(visibleItems, selected)`: 表示対象のうち選択中の項目（元の並び順）
+5. `buildSummaryCards` / `buildChartSpec` / `buildRanking`: 2 と 4 から表示用のデータを作る（`buildSummaryCards` は `{ days, items, options }` を渡す）
+6. `buildChartTitle` / `buildChartNote`: 表示条件からグラフの見出しと補足を作る
 
 ### 表示条件の変更
 
@@ -131,7 +133,7 @@ reducer は状態を直接変更せず、常に新しいオブジェクト（`se
 | `setPeriod`   | 期間を変更する                                               |
 | `applyPreset` | 日数（0 は全期間）から `presetPeriod` で期間を作って設定する |
 | `toggleItem`  | 項目の選択を切り替える                                       |
-| `selectAll`   | `summary.items` をすべて選択する                             |
+| `selectAll`   | 引数で渡した項目をすべて選択する（呼び出し側は `visibleItems`） |
 | `selectNone`  | 選択をすべて解除する                                         |
 
 ## lib（純粋関数）
@@ -151,8 +153,9 @@ reducer は状態を直接変更せず、常に新しいオブジェクト（`se
 | `formatMetricWithUnit` | 丸めと書式化を行い、単位（件 / 分 / 時間）を付ける                                         |
 | `groupByMonth`         | 日別データを月（`YYYY-MM`）ごとにまとめる。戻りは `DaysByMonth`（出現順を保つ）            |
 | `filterDays`           | 期間（両端を含む）で日別データを絞り込む。空文字は制限なし                                 |
-| `assignColors`         | 項目の並び順にパレットの色を割り当てる。戻りは `ItemColors`。数を超えたら先頭から繰り返す |
-| `orderSelectedItems`   | 元の並び順を保ったまま、選択した項目だけを返す                                             |
+| `assignColors`           | 項目の並び順にパレットの色を割り当てる。戻りは `ItemColors`。数を超えたら先頭から繰り返す |
+| `orderSelectedItems`     | 元の並び順を保ったまま、選択した項目だけを返す                                             |
+| `itemsWithValueInPeriod` | 期間内で、指標と対象の値が 1 日でも正の項目だけを返す（元の並び順を保つ）                   |
 
 対象（`target`）ごとの値の取り出し方は次のとおりです。
 
