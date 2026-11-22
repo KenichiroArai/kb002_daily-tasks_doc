@@ -97,7 +97,7 @@ type LoadState<T> =
 | `options`  | `DashboardOptions`    | 表示条件       |
 | `selected` | `ReadonlySet<string>` | 選択中の項目名 |
 
-初期状態は `createInitialState(summary, initialOptions)` で作ります。優先順位は「URL クエリの値」>「全期間の期間」>「`DEFAULT_OPTIONS`」です。項目はすべて選択します。
+初期状態は `createInitialState(summary, initialOptions)` で作ります。優先順位は「URL クエリの値」>「最新1日の期間」>「`DEFAULT_OPTIONS`」です。項目はすべて選択します。
 
 | アクション   | 引数                               | 処理                              |
 | ------------ | ---------------------------------- | --------------------------------- |
@@ -131,7 +131,7 @@ reducer は状態を直接変更せず、常に新しいオブジェクト（`se
 | ------------- | ------------------------------------------------------------ |
 | `setOptions`  | 表示条件の一部を変更する                                     |
 | `setPeriod`   | 期間を変更する                                               |
-| `applyPreset` | 日数（0 は全期間）から `presetPeriod` で期間を作って設定する |
+| `applyPreset` | 日数（0 は全期間、1 は最新1日）から `presetPeriod` で期間を作って設定する |
 | `toggleItem`  | 項目の選択を切り替える                                       |
 | `selectAll`   | 引数で渡した項目をすべて選択する（呼び出し側は `visibleItems`） |
 | `selectNone`  | 選択をすべて解除する                                         |
@@ -192,6 +192,13 @@ type ChartSpec = {
 | `buildChartTitle` | グラフの見出し（[03. 画面設計](03-screen.md)） |
 | `buildChartNote`  | グラフの補足。該当しない場合は空文字           |
 
+### chartAxis.ts（数値軸の目盛）
+
+| 関数              | 内容                                                                                         |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `maxChartValue`   | グラフの数値の最大。積み上げなら行ごとの合計の最大、それ以外は系列ごとの最大                 |
+| `buildValueAxis`  | 指標と最大値から、下限 0・切りのいい間隔の `domain` / `ticks` を返す（[03. 画面設計](03-screen.md)） |
+
 ### summaryCards/（サマリカード）
 
 `buildSummaryCards({ days, items, options })` が各カード用の関数を呼び、`SummaryCardData[]`（ラベル・値・補足）を返します。期間内にデータがなければ「データなし」の 1 枚だけです。各カード関数には必要な引数だけを渡します（件数・時間カードは `target`、平均・最大・最小は `metric` と `target`）。カードを増やすときはファイルと関数を追加し、オーケストレータに並べます。
@@ -210,7 +217,7 @@ type ChartSpec = {
 
 | ファイル          | 関数                | 内容                                                                                                      |
 | ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------- |
-| `period.ts`       | `presetPeriod`      | 最新日を終わりとする直近 N 日間の期間。N が 0 なら全期間。データがなければ空の期間。日付は UTC で計算する |
+| `period.ts`       | `presetPeriod`      | 最新日を終わりとする直近 N 日間の期間。N が 0 なら全期間、1 なら最新1日。データがなければ空の期間。日付は UTC で計算する |
 | `queryOptions.ts` | `parseQueryOptions` | クエリ文字列から `view` / `metric` / `agg` / `target` を読み取る。想定外の値は無視する                    |
 | `ranking.ts`      | `buildRanking`      | 項目ごとの最新・平均・最大・最小・合計。最新の大きい順、同じなら平均の大きい順                            |
 
@@ -225,7 +232,7 @@ type ChartSpec = {
 | `SummaryCards`       | `cards`                                                                          | サマリカードを並べる（`aria-label="サマリ"`）                                |
 | `DashboardControls`  | `options`、`minDate`、`maxDate`、`onOptionsChange`、`onPeriodChange`、`onPreset` | 表示・指標・集計・対象のセレクトボックス、期間の入力欄、プリセットボタン     |
 | `ItemSelector`       | `items`、`colors`、`selected`、`onToggle`、`onSelectAll`、`onSelectNone`         | 項目のチェックボックスと一括選択・解除                                       |
-| `CarryoverChart`     | `title`、`note`、`spec`、`metric`                                                | `ChartSpec` から Recharts の面グラフ・棒グラフ・横棒グラフを描画する         |
+| `CarryoverChart`     | `title`、`note`、`spec`、`metric`                                                | `ChartSpec` から Recharts の面グラフ・棒グラフ・横棒グラフを描画する。数値軸の `domain` / `ticks` は `buildValueAxis` で決める |
 | `ChartTooltip`       | `active`、`label`、`entries`、`metric`、`stacked`                                | 値の大きい順のツールチップ。積み上げで 2 系列以上なら合計も出す              |
 | `RankingTable`       | `rows`、`colors`、`metric`                                                       | 項目ごとの集計表                                                             |
 
@@ -263,7 +270,7 @@ type ChartSpec = {
 |              | `AGG_LABELS`           | 集計方法のラベル                                         |
 |              | `TARGET_LABELS`        | 対象のラベル                                             |
 |              | `UNIT_LABELS`          | 単位（件 / 分 / 時間）                                   |
-|              | `PERIOD_PRESETS`       | 期間のプリセット（全期間 / 直近30日 / 直近90日）         |
+|              | `PERIOD_PRESETS`       | 期間のプリセット（最新（1日） / 直近30日 / 直近90日 / 全期間） |
 | `palette.ts` | `PALETTE`              | 系列の色（16 色）                                        |
 |              | `PRIMARY_COLOR`        | 1 系列の表示の色（`PALETTE[0]`）                         |
 |              | `ORIGIN_MONTH_COLOR`   | 持ち越し元の月ごとの表示の色（`PALETTE[4]`）             |
