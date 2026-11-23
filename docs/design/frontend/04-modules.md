@@ -97,7 +97,7 @@ type LoadState<T> =
 | `options`  | `DashboardOptions`    | 表示条件       |
 | `selected` | `ReadonlySet<string>` | 選択中の項目名 |
 
-初期状態は `createInitialState(summary, initialOptions)` で作ります。優先順位は「URL クエリの値」>「最新1日の期間」>「`DEFAULT_OPTIONS`」です。項目はすべて選択します。
+初期状態は `createInitialState(summary, initialOptions)` で作ります。優先順位は「URL クエリの値」>「最新1日の期間」>「`DEFAULT_OPTIONS`」です。`DEFAULT_OPTIONS` の既定は `view: item`・`metric: minutes` です。項目はすべて選択します。期間に合わない `view` は `clampView` で `item` に戻します（`setOptions` / `setPeriod` でも同様）。
 
 | アクション   | 引数                               | 処理                              |
 | ------------ | ---------------------------------- | --------------------------------- |
@@ -187,10 +187,10 @@ type ChartSpec = {
 
 ### chartText.ts（グラフの文言）
 
-| 関数              | 内容                                           |
-| ----------------- | ---------------------------------------------- |
-| `buildChartTitle` | グラフの見出し（[03. 画面設計](03-screen.md)） |
-| `buildChartNote`  | グラフの補足。該当しない場合は空文字           |
+| 関数              | 内容                                                                                         |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `buildChartTitle` | グラフの見出し。指標は `METRIC_OPTION_LABELS`（[03. 画面設計](03-screen.md)）                |
+| `buildChartNote`  | グラフの補足。単位（`UNIT_LABELS`）を常に出し、集計対象の表示では選択中の集計名も出す       |
 
 ### chartAxis.ts（数値軸の目盛）
 
@@ -215,11 +215,14 @@ type ChartSpec = {
 
 ### その他
 
-| ファイル          | 関数                | 内容                                                                                                      |
-| ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------- |
-| `period.ts`       | `presetPeriod`      | 最新日を終わりとする直近 N 日間の期間。N が 0 なら全期間、1 なら最新1日。データがなければ空の期間。日付は UTC で計算する |
-| `queryOptions.ts` | `parseQueryOptions` | クエリ文字列から `view` / `metric` / `agg` / `target` を読み取る。想定外の値は無視する                    |
-| `ranking.ts`      | `buildRanking`      | 項目ごとの最新・平均・最大・最小・合計。最新の大きい順、同じなら平均の大きい順                            |
+| ファイル          | 関数                 | 内容                                                                                                      |
+| ----------------- | -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `period.ts`       | `presetPeriod`       | 最新日を終わりとする直近 N 日間の期間。N が 0 なら全期間、1 なら最新1日。データがなければ空の期間。日付は UTC で計算する |
+| `views.ts`        | `isSingleDayPeriod`  | 開始と終了が同じ（かつ空でない）とき 1 日の期間とみなす                                                   |
+|                   | `availableViews`     | 期間に応じた表示の候補（1 日は `item` / `originMonth`、複数日は `MULTI_DAY_VIEWS`）                       |
+|                   | `clampView`          | 期間の候補外の表示を `item` に戻す                                                                        |
+| `queryOptions.ts` | `parseQueryOptions`  | クエリ文字列から `view` / `metric` / `agg` / `target` を読み取る。想定外の値は無視する                    |
+| `ranking.ts`      | `buildRanking`       | 項目ごとの最新・平均・最大・最小・合計。最新の大きい順、同じなら平均の大きい順                            |
 
 ## コンポーネント
 
@@ -230,7 +233,7 @@ type ChartSpec = {
 | `CarryoverDashboard` | なし                                                                             | summary.json を読み込み、状態に応じてメッセージか `DashboardView` を表示する |
 | `DashboardView`      | `summary`                                                                        | 表示条件の状態を持ち、表示用のデータを作って各部品に渡す                     |
 | `SummaryCards`       | `cards`                                                                          | サマリカードを並べる（`aria-label="サマリ"`）                                |
-| `DashboardControls`  | `options`、`minDate`、`maxDate`、`onOptionsChange`、`onPeriodChange`、`onPreset` | 表示・指標・集計・対象のセレクトボックス、期間の入力欄、プリセットボタン     |
+| `DashboardControls`  | `options`、`minDate`、`maxDate`、`onOptionsChange`、`onPeriodChange`、`onPreset` | 表示・指標・集計・対象のセレクトボックス、期間の入力欄、プリセットボタン。表示の選択肢は `availableViews` で期間に応じて切り替える |
 | `ItemSelector`       | `items`、`colors`、`selected`、`onToggle`、`onSelectAll`、`onSelectNone`         | 項目のチェックボックスと一括選択・解除                                       |
 | `CarryoverChart`     | `title`、`note`、`spec`、`metric`                                                | `ChartSpec` から Recharts の面グラフ・棒グラフ・横棒グラフを描画する。数値軸の `domain` / `ticks` は `buildValueAxis` で決める |
 | `ChartTooltip`       | `active`、`label`、`entries`、`metric`、`stacked`                                | 値の大きい順のツールチップ。積み上げで 2 系列以上なら合計も出す              |
@@ -264,13 +267,13 @@ type ChartSpec = {
 
 | ファイル     | 定数                   | 内容                                                     |
 | ------------ | ---------------------- | -------------------------------------------------------- |
-| `labels.ts`  | `VIEW_LABELS`          | 表示の種類のラベル                                       |
-|              | `METRIC_LABELS`        | 指標のラベル（グラフの軸・見出し用）                     |
-|              | `METRIC_OPTION_LABELS` | 指標のラベル（セレクトボックス用。件数は「件数（残）」） |
-|              | `AGG_LABELS`           | 集計方法のラベル                                         |
-|              | `TARGET_LABELS`        | 対象のラベル                                             |
-|              | `UNIT_LABELS`          | 単位（件 / 分 / 時間）                                   |
-|              | `PERIOD_PRESETS`       | 期間のプリセット（最新（1日） / 直近30日 / 直近90日 / 全期間） |
+| `labels.ts`  | `VIEW_LABELS`          | 表示の種類のラベル（項目ごと / 日別推移 / 月ごと / 持ち越し元の月ごと） |
+|              | `METRIC_LABELS`        | 指標のラベル（グラフの軸・カード用。件数は「件数」）                   |
+|              | `METRIC_OPTION_LABELS` | 指標のラベル（セレクト・グラフ見出し用。件数は「件数（残）」）         |
+|              | `AGG_LABELS`           | 集計方法のラベル                                                       |
+|              | `TARGET_LABELS`        | 対象のラベル                                                           |
+|              | `UNIT_LABELS`          | 単位（件 / 分 / 時間）                                                 |
+|              | `PERIOD_PRESETS`       | 期間のプリセット（最新1日 / 直近30日 / 全期間）                        |
 | `palette.ts` | `PALETTE`              | 系列の色（16 色）                                        |
 |              | `PRIMARY_COLOR`        | 1 系列の表示の色（`PALETTE[0]`）                         |
 |              | `ORIGIN_MONTH_COLOR`   | 持ち越し元の月ごとの表示の色（`PALETTE[4]`）             |
