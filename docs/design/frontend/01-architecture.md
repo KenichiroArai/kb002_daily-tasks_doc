@@ -15,17 +15,30 @@ mk002_daily-tasks_web-next/
   src/
     app/                     # ルーティング専用
       layout.tsx             # 共通レイアウト（Header / PageContainer / Footer）
-      page.tsx               # トップページ（CarryoverDashboard を表示）
+      page.tsx               # / 概要
+      carryover/page.tsx     # /carryover
+      advance/page.tsx       # /advance
       not-found.tsx          # 404 ページ
-    features/
-      carryover/             # 持ち越しの機能
+    dailyTasks/
+      overview/              # 全体概要（各機能への案内）
+        index.ts
+        components/
+      carryover/             # 持ち越し（summary.json）
         index.ts             # 機能の公開窓口
         api/                 # データ取得（fetchSummary）
         model/               # 型と zod スキーマ、表示条件の型
         constants/           # ラベル、配色、期間のプリセット
         lib/                 # 純粋関数（集計、グラフ用データ、文言）
-        hooks/               # 状態管理とデータ読み込みのフック（フック専用の reducer も置く）
+        hooks/               # 状態管理とデータ読み込みのフック
         components/          # 機能の画面部品
+      advance/               # 先行（advance/summary.json。carryover と同構成）
+        index.ts
+        api/
+        model/
+        constants/
+        lib/
+        hooks/
+        components/
     shared/
       components/ui/         # Panel、Select、Button、Card、DateRange、Swatch
       components/layout/     # Header、Footer、PageContainer
@@ -35,12 +48,10 @@ mk002_daily-tasks_web-next/
     config/site.ts           # サイト名、リポジトリの URL など
     styles/globals.css       # CSS 変数と要素の共通スタイル
   tests/                     # Vitest テスト（src/ をミラー）
-    features/carryover/
-      api/
-      components/
-      hooks/
-      lib/
+    dailyTasks/overview/
+    dailyTasks/carryover/
       fixtures.ts            # テスト用のデータ
+    dailyTasks/advance/
     shared/
       components/
       hooks/
@@ -52,73 +63,75 @@ mk002_daily-tasks_web-next/
 | フォルダ    | 役割                                                                                    |
 | ----------- | --------------------------------------------------------------------------------------- |
 | `app/`      | Next.js のルーティング。機能を呼び出すだけで、ロジックを置かない                        |
-| `features/` | 機能ごとの画面とロジック。機能の外へは `index.ts` で公開したものだけを出す              |
+| `dailyTasks/` | 機能ごとの画面とロジック（`overview`・`carryover`・`advance`）。機能の外へは `index.ts` で公開したものだけを出す |
 | `shared/`   | 機能に依存しない汎用の部品・関数・型                                                    |
 | `config/`   | サイト全体の設定値                                                                      |
 | `styles/`   | 全体に効くスタイル（CSS 変数、要素の共通スタイル）。部品のスタイルは CSS Modules に置く |
 
 ## 依存の向き
 
-依存は `app` -> `features` -> `shared` の一方向だけにします。
+依存は `app` -> `dailyTasks` -> `shared` の一方向だけにします。
 
 ```mermaid
 flowchart LR
-  app["app/"] --> features["features/carryover（index.ts）"]
+  app["app/"] --> dailyTasks["dailyTasks/*（index.ts）"]
   app --> shared["shared/"]
   app --> config["config/"]
-  features --> shared
+  dailyTasks --> shared
 ```
 
-構成要素の境界は次のとおりです。`features/carryover` の外へは `index.ts` が公開する `CarryoverDashboard`、`SUMMARY_PATH`、`Summary` だけが出ます。
+構成要素の境界は次のとおりです。各機能の外へは `index.ts` が公開する画面コンポーネント、`SUMMARY_PATH`（carryover / advance）、型などだけが出ます。
 
 ```mermaid
 flowchart LR
   subgraph appLayer [app]
     appNode["ルーティング"]
   end
-  subgraph featureLayer ["features/carryover"]
-    featureNode["機能"]
+  subgraph featureLayer [dailyTasks]
+    overviewNode["overview"]
+    carryoverNode["carryover"]
+    advanceNode["advance"]
   end
   subgraph sharedLayer [shared]
     sharedNode["部品と assetPath"]
   end
-  subgraph configLayer [config]
-    configNode["site.ts"]
-  end
-  summaryJson["summary.json"]
-  recharts["Recharts"]
+  summaryJson["data/summary.json"]
+  advanceSummary["data/advance/summary.json"]
 
-  appNode -->|"CarryoverDashboard / SUMMARY_PATH / Summary"| featureNode
-  appNode --> sharedNode
-  appNode --> configNode
-  featureNode --> sharedNode
-  featureNode -->|"fetch"| summaryJson
-  featureNode --> recharts
+  appNode --> overviewNode
+  appNode --> carryoverNode
+  appNode --> advanceNode
+  carryoverNode --> sharedNode
+  advanceNode --> sharedNode
+  carryoverNode -->|"fetch"| summaryJson
+  advanceNode -->|"fetch"| advanceSummary
 ```
 
-- `shared/`・`config/` から `features/` を import しない
-- 機能の内部（`@/features/<機能名>/xxx`）を機能の外から import しない。必ず `@/features/<機能名>`（`index.ts`）を経由する
+- `shared/`・`config/` から `dailyTasks/` を import しない
+- 機能の内部（`@/dailyTasks/<機能名>/xxx`）を機能の外から import しない。必ず `@/dailyTasks/<機能名>`（`index.ts`）を経由する
 - 同じ機能の中では相対パスで import する
 - 機能の外のファイルは `@/`（`src/` を指すパスエイリアス）で import する
 - `app/` はどこからも import しない
 
 これらは [eslint.config.mjs](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/eslint.config.mjs) の `no-restricted-imports` でチェックします。
 
-| 対象ファイル                     | 禁止する import                |
-| -------------------------------- | ------------------------------ |
-| `src/app/**`                     | `@/features/*/*`（機能の内部） |
-| `src/features/**`                | `@/app`、`@/features/*/*`      |
-| `src/shared/**`、`src/config/**` | `@/app`、`@/features`          |
+| 対象ファイル                     | 禁止する import                  |
+| -------------------------------- | -------------------------------- |
+| `src/app/**`                     | `@/dailyTasks/*/*`（機能の内部） |
+| `src/dailyTasks/**`              | `@/app`、`@/dailyTasks/*/*`      |
+| `src/shared/**`、`src/config/**` | `@/app`、`@/dailyTasks`          |
 
 ### 機能の公開窓口
 
-[features/carryover/index.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/index.ts) で公開しているものは次の 3 つです。
+[dailyTasks/carryover/index.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/index.ts) の例:
 
-| 名前                 | 種類           | 利用箇所                                              |
-| -------------------- | -------------- | ----------------------------------------------------- |
-| `CarryoverDashboard` | コンポーネント | `app/page.tsx`                                        |
-| `SUMMARY_PATH`       | 定数           | `app/layout.tsx`（Footer の summary.json へのリンク） |
-| `Summary`            | 型             | 機能の外で型が必要な場合                              |
+| 名前                 | 種類           | 利用箇所                                   |
+| -------------------- | -------------- | ------------------------------------------ |
+| `CarryoverDashboard` | コンポーネント | `app/carryover/page.tsx`                   |
+| `SUMMARY_PATH`       | 定数           | `/data/summary.json`（Footer リンクなど） |
+| `Summary`            | 型             | 機能の外で型が必要な場合                   |
+
+`advance` は `SUMMARY_PATH` が `/data/advance/summary.json` を指します。
 
 ### コンポーネントのフォルダ構成
 
@@ -131,7 +144,7 @@ Xxx/
   index.ts         # export
 ```
 
-テストは `tests/` 側に同じ相対パスで置きます（例: `tests/features/carryover/components/Xxx/Xxx.test.tsx`）。
+テストは `tests/` 側に同じ相対パスで置きます（例: `tests/dailyTasks/carryover/components/Xxx/Xxx.test.tsx`）。
 
 ## 静的エクスポート
 

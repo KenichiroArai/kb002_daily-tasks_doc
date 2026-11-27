@@ -1,11 +1,11 @@
 # 設計書
 
-日々のタスク（GitHub Issue、1 日 1 Issue）の「持ち越し」を集計し、グラフとして公開するプログラム部分の設計書です。
+日々のタスク（GitHub Issue、1 日 1 Issue）の「持ち越し」と「先行」を集計し、グラフとして公開するプログラム部分の設計書です。
 画面と収集ツールは、別の設計書に分けています。
 
 | 設計書                                     | 対象リポジトリ                                                                            | 内容                                                     |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [フロントエンド設計書](design/frontend.md) | [mk002_daily-tasks_web-next](https://github.com/KenichiroArai/mk002_daily-tasks_web-next) | 画面。`summary.json` を読み、グラフと表で推移を表示する |
+| [フロントエンド設計書](design/frontend.md) | [mk002_daily-tasks_web-next](https://github.com/KenichiroArai/mk002_daily-tasks_web-next) | 画面。`summary.json` と `advance/summary.json` を読み、グラフと表で推移を表示する |
 | [バックエンド設計書](design/backend.md)    | [gr002_daily-tasks](https://github.com/KenichiroArai/gr002_daily-tasks)                   | 収集ツール。Issue を取得・解析し、JSON を出力する       |
 
 実装を変更した場合は、関係する設計書の章もあわせて更新してください。

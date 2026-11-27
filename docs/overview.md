@@ -1,6 +1,6 @@
 # 全体構成
 
-日々のタスク（GitHub Issue、1 日 1 Issue）の「持ち越し」（旧「繰り越し」「負債」）を集計し、グラフとして GitHub Pages に公開する仕組みの全体像です。
+日々のタスク（GitHub Issue、1 日 1 Issue）の「持ち越し」（旧「繰り越し」「負債」）と「先行」を集計し、グラフとして GitHub Pages に公開する仕組みの全体像です。
 
 ## リポジトリの役割
 
@@ -26,7 +26,7 @@ daily-tasks_wk/
 ```
 
 - 収集ツールの jar は daily-tasks-git をカレントディレクトリにして実行します（`config/default-minutes.json` を読み、`docs/data/` に出力する）
-- 画面は `dev` / `build` の前に `../daily-tasks-git/docs/data` を `public/data/` にコピーします（環境変数 `CARRYOVER_DATA_DIR` で変更可能）
+- 画面は `dev` / `build` の前に `../daily-tasks-git/docs/data` を `public/data/` にコピーします（環境変数 `CARRYOVER_DATA_DIR` で変更可能）。持ち越しは `docs/data/summary.json`、先行は `docs/data/advance/summary.json` を読みます
 
 ## データの流れ
 
@@ -68,8 +68,8 @@ flowchart LR
   issues -->|"公開"| githubApi
   command -->|"Issue の一覧"| githubApi
   command -->|"標準時間"| configFile
-  command -->|"issues と summary.json"| dataDir
-  site -->|"summary.json をコピー"| dataDir
+  command -->|"issues・summary.json・advance/summary.json"| dataDir
+  site -->|"docs/data をコピー"| dataDir
   site -->|"静的ファイル"| pages
   browser -->|"summary.json"| pages
 ```
@@ -77,7 +77,7 @@ flowchart LR
 - daily-tasks-git は Issue、標準時間の設定、出力した JSON を持つ
 - 収集ツールは GitHub REST API から Issue を取り、設定を読んで JSON を書く
 - 画面は JSON を静的ファイルにし、GitHub Pages が配信する
-- ブラウザは Pages 上の `summary.json` を読む
+- ブラウザは Pages 上の `summary.json`（持ち越し）と `advance/summary.json`（先行）を読む
 
 ## 収集と公開（GitHub Actions）
 
@@ -110,7 +110,7 @@ flowchart TB
   dataDir -->|"コピーしてビルド"| nextBuild
   nextBuild --> outDir
   outDir -->|"デプロイ"| pages
-  browser -->|"summary.json"| pages
+  browser -->|"summary.json / advance/summary.json"| pages
 ```
 
 ## ドキュメントの置き場所

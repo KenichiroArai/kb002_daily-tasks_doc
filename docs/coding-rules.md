@@ -244,7 +244,7 @@ if (stored == null) {
 
 ## 構成
 
-- 機能単位で構成する（Java は機能パッケージ + 5 層、TypeScript は `src/features/<機能名>/`）
+- 機能単位で構成する（Java は機能パッケージ + 5 層、TypeScript は `src/dailyTasks/<機能名>/`）
 - 依存の向きを一方向に限定し、ツール（Java は ArchUnit、TypeScript は ESLint）で検査する
 
 ## 役割
@@ -285,6 +285,7 @@ if (stored == null) {
 ## Javadoc（Java）
 
 - `{@inheritDoc}` は使わない。オーバーライドやインタフェースの実装でも、そのメソッドに説明と必須タグを書く
+- `@since` は追加したときのバージョンとする。パッケージを変更した場合（型の移動・パッケージ宣言の変更）は、その型と移したメンバーの `@since` を新しいバージョンにする
 - タグや書き方の詳細は [gr002_daily-tasks の AGENTS.md](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/AGENTS.md) の「Javadoc」に従う
 
 ## テスト

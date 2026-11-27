@@ -2,12 +2,12 @@
 
 [設計書の入口へ戻る](../design.md)
 
-日々のタスクの「持ち越し」を集計する収集ツール（[gr002_daily-tasks](https://github.com/KenichiroArai/gr002_daily-tasks)）の設計書です。
+日々のタスクの「持ち越し」と「先行」を集計する収集ツール（[gr002_daily-tasks](https://github.com/KenichiroArai/gr002_daily-tasks)）の設計書です。
 内容は gr002_daily-tasks の `src/main/java` と `src/main/resources` の現状の実装を正として記述しています。実装を変更した場合は、関係する章もあわせて更新してください。
 
 ## 目的
 
-GitHub Issue（1 日 1 Issue）で管理している日々のタスクのうち、「持ち越し」（旧「繰り越し」「負債」）を Issue 本文から収集・解析し、画面が読む JSON を出力します。
+GitHub Issue（1 日 1 Issue）で管理している日々のタスクのうち、「持ち越し」（旧「繰り越し」「負債」）と「先行」を Issue 本文から収集・解析し、画面が読む JSON を出力します。機能パッケージは `carryover` と `advance` で、`infrastructure` と GitHub API（`repository/api/github`）はルートパッケージ直下の共通部分として置きます。
 
 - 入力は daily-tasks-git の Issue と `config/default-minutes.json` です
 - 出力は daily-tasks-git の `docs/data/` です。収集ツール以外は、この JSON を手で編集しません
@@ -61,7 +61,9 @@ flowchart LR
   command --> service
   service --> issuesJson["docs/data/issues/NNNN.json"]
   service --> summaryJson["docs/data/summary.json"]
-  summaryJson --> frontend["画面（mk002）"]
+  service --> advanceSummary["docs/data/advance/summary.json"]
+  summaryJson --> frontend["画面（/carryover）"]
+  advanceSummary --> frontendAdv["画面（/advance）"]
 ```
 
 ## 関連ドキュメント

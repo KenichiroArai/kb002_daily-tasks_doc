@@ -16,10 +16,11 @@ jar のカレントディレクトリは daily-tasks-git のルートです。�
 | ファイル                         | 方向 | 内容                                       | 主な利用者                         |
 | -------------------------------- | ---- | ------------------------------------------ | ---------------------------------- |
 | `config/default-minutes.json`    | 読取 | 項目名と標準時間（分）の対応               | 時間表記がない行の補完             |
-| `docs/data/issues/NNNN.json`     | 読書 | Issue ごとの解析結果。ファイル名は `%04d`  | 差分モードの集計再構築、次回の収集 |
-| `docs/data/summary.json`         | 書込 | 日別集計                                   | 画面（mk002）                      |
+| `docs/data/issues/NNNN.json`     | 読書 | Issue ごとの解析結果（持ち越し・先行）。ファイル名は `%04d`  | 差分モードの集計再構築、次回の収集 |
+| `docs/data/summary.json`         | 書込 | 持ち越しの日別集計                         | 画面（mk002 `/carryover`）         |
+| `docs/data/advance/summary.json` | 書込 | 先行の日別集計                             | 画面（mk002 `/advance`）           |
 
-Issue ごとのファイル名は [CarryoverDataFileTypes](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/types/CarryoverDataFileTypes.java) と [CarryoverDataFormatTypes](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/types/CarryoverDataFormatTypes.java) で決めます。ディレクトリ名は `issues`、拡張子は `.json`、集計ファイル名は `summary.json`、Issue ファイル名は 4 桁ゼロ埋めです。
+Issue ごとのファイル名は [CarryoverDataFileTypes](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/types/CarryoverDataFileTypes.java) と [CarryoverDataFormatTypes](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/repository/types/CarryoverDataFormatTypes.java) で決めます。ディレクトリ名は `issues`、拡張子は `.json`、持ち越しの集計ファイル名は `summary.json`、Issue ファイル名は 4 桁ゼロ埋めです。先行の集計は [AdvanceDataFileTypes](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/advance/repository/types/AdvanceDataFileTypes.java) により `advance/summary.json` です。
 
 ## 設定の引き継ぎ
 

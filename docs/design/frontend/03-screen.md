@@ -4,12 +4,14 @@
 
 ## 画面一覧
 
-| ルート   | ファイル                                                                                                         | 内容                                         |
-| -------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `/`      | [app/page.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/page.tsx)           | 持ち越しの推移（`CarryoverDashboard`）       |
-| 該当なし | [app/not-found.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/not-found.tsx) | 「ページが見つかりません」とトップへのリンク |
+| ルート        | ファイル                                                                                                               | 内容                                           |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `/`           | [app/page.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/page.tsx)                 | 全体概要（`dailyTasks/overview`）              |
+| `/carryover`  | [app/carryover/page.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/carryover/page.tsx) | 持ち越しの推移（`CarryoverDashboard`）         |
+| `/advance`    | [app/advance/page.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/advance/page.tsx)   | 先行の推移（advance 機能のダッシュボード）   |
+| 該当なし      | [app/not-found.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/not-found.tsx)       | 「ページが見つかりません」とトップへのリンク   |
 
-すべてのページは [app/layout.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/layout.tsx) の共通レイアウト（Header / PageContainer / Footer）の中に表示します。ページのタイトルは `siteConfig.title | siteConfig.name`（`持ち越しの推移 | daily-tasks`）です（[config/site.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/config/site.ts)）。
+すべてのページは [app/layout.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/layout.tsx) の共通レイアウト（Header / PageContainer / Footer）の中に表示します。Header のナビゲーションから 3 ルートを切り替えます。機能ページのタイトルは `siteConfig` と機能名に応じて付けます（[config/site.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/config/site.ts)）。
 
 ## 画面構成（トップページ）
 
@@ -93,7 +95,7 @@ stateDiagram-v2
 
 ## 表示条件
 
-表示条件は [features/carryover/model/options.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/model/options.ts) の `DashboardOptions` で表します。
+表示条件は [dailyTasks/carryover/model/options.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/model/options.ts) の `DashboardOptions` で表します。
 
 | 項目 | キー          | 選択肢                                                                                              | 既定値    |
 | ---- | ------------- | --------------------------------------------------------------------------------------------------- | --------- |
@@ -171,7 +173,7 @@ stateDiagram-v2
 
 ## URL クエリによる初期値
 
-URL のクエリ文字列で、表示条件の初期値を指定できます（[lib/queryOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/lib/queryOptions.ts)）。
+URL のクエリ文字列で、表示条件の初期値を指定できます（[lib/queryOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/lib/queryOptions.ts)）。
 
 ```text
 https://<ユーザー>.github.io/daily-tasks-git/?view=monthlyItem&metric=hours

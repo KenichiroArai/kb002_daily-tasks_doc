@@ -4,7 +4,7 @@
 
 ## ディレクトリ構成
 
-ルートパッケージは `kmg.gr.gr002.dailytasks` です。業務のクラスは機能パッケージ `carryover` の中に置き、起動クラスだけを直下に置きます。
+ルートパッケージは `kmg.gr.gr002.dailytasks` です。起動クラス、`infrastructure`（共通）、`repository/api/github`（共通）、機能パッケージ `carryover` と `advance` を直下に置きます。
 
 ```text
 gr002_daily-tasks/
@@ -12,6 +12,11 @@ gr002_daily-tasks/
   launch/                         # Eclipse の実行の構成
   src/main/java/kmg/gr/gr002/dailytasks/
     DailyTasksApplication.java    # 起動クラス（Spring Boot を起動するだけ）
+    infrastructure/               # 共通（メッセージなど。業務を知らない）
+      context/
+      types/msg/
+    repository/                   # 共通のデータアクセス
+      api/github/                 # GitHub REST API 実装
     carryover/
       presentation/               # CLI などの入出力層
         command/                  # CarryoverCommand
@@ -31,15 +36,16 @@ gr002_daily-tasks/
         repository/dao/           # CarryoverDataDao、DefaultMinutesDao
         dto/                      # repository と受け渡す DTO
         types/                    # 対象セクション、解析の正規表現と固定文字列
-      infrastructure/             # 業務を知らない汎用の部品
-        context/                  # DailyTasksMessageSource（KmgMessageSource を継承）
-        types/msg/                # Gr002GenMsgTypes、Gr002LogMsgTypes、Gr002ValMsgTypes
-      repository/                 # データアクセス
-        api/github/               # GitHubApiClient、GitHubIssueClient、GitHubIssueApiImpl
+      repository/                 # 機能固有のデータアクセス
         dao/carryoverdata/        # CarryoverDataDaoImpl
         dao/defaultminutes/       # DefaultMinutesDaoImpl
         dto/json/                 # Jackson のアノテーションを持つ JSON の形。domain の DTO との変換もここ
-        types/                    # 出力ファイル名、GitHub API の URL・ヘッダ
+        types/                    # 出力ファイル名など
+    advance/                      # 先行（carryover と同じ 5 層。集計は advance/summary.json へ出力）
+      presentation/
+      application/
+      domain/
+      repository/
   src/main/resources/
     application.properties
     messages.properties
@@ -63,7 +69,8 @@ gr002_daily-tasks/
 daily-tasks-git/
   config/default-minutes.json    # 時間表記がない行を補完する項目ごとの標準時間
   docs/data/issues/NNNN.json     # Issue ごとの解析結果（4 桁ゼロ埋め）
-  docs/data/summary.json         # 画面用の日別集計
+  docs/data/summary.json         # 持ち越しの画面用日別集計
+  docs/data/advance/summary.json # 先行の画面用日別集計
 ```
 
 ## 処理の流れと依存の向き
@@ -150,7 +157,7 @@ flowchart TB
   githubApi -->|"DailyTasksMessageSource"| message
   minutesDao -->|"DailyTasksMessageSource"| message
   githubApi -->|"Issue の一覧"| githubRest
-  dataDao -->|"issues と summary.json"| jsonFiles
+  dataDao -->|"issues・summary.json・advance/summary.json"| jsonFiles
   minutesDao -->|"標準時間"| minutesFile
 ```
 
@@ -168,7 +175,7 @@ flowchart TB
 | `spring.messages.basename`            | `messages,messages-log`    |
 | `spring.messages.encoding`            | `UTF-8`                    |
 
-起動後、Spring が `CommandLineRunner` である [CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) の `run` を呼びます。引数の解釈と収集の手順は [03. 収集処理](03-processing.md) です。
+起動後、Spring が `CommandLineRunner` である [CarryoverCommandImpl](https://github.com/KenichiroArai/gr002_daily-tasks/blob/main/src/main/java/kmg/gr/gr002/dailytasks/carryover/presentation/command/impl/CarryoverCommandImpl.java) の `run` を呼びます。**先行専用の Command はなく**、この入口が持ち越しと先行の両方を収集・集計します。引数の解釈と収集の手順は [03. 収集処理](03-processing.md) です。
 
 ## DI
 

@@ -36,6 +36,7 @@ flowchart TB
   command["CarryoverCommandImpl"] --> service["CarryoverServiceImpl"]
   service --> collectService["CarryoverCollectServiceImpl"]
   service --> aggregateService["CarryoverAggregateServiceImpl"]
+  service --> advanceAggregate["AdvanceAggregateServiceImpl"]
   service --> batchLogic["CarryoverBatchLogicImpl"]
   collectService --> issueLogic["DailyTaskIssueLogicImpl"]
   collectService --> minutesLogic["DefaultMinutesLogicImpl"]
@@ -43,15 +44,20 @@ flowchart TB
   collectService --> parseLogic["CarryoverParseLogicImpl"]
   aggregateService --> aggregateLogic["CarryoverAggregateLogicImpl"]
   aggregateService --> summaryData["CarryoverDataLogicImpl"]
+  advanceAggregate --> advanceAggLogic["AdvanceAggregateLogicImpl"]
+  advanceAggregate --> advanceData["AdvanceDataLogicImpl"]
   issueLogic --> github["GitHubIssueApiImpl"]
   minutesLogic --> minutesDao["DefaultMinutesDaoImpl"]
   dataLogic --> dataDao["CarryoverDataDaoImpl"]
   summaryData --> dataDao
+  advanceData --> advanceDao["AdvanceDataDaoImpl"]
   dataLogic --> message["DailyTasksMessageSource"]
   parseLogic --> message
   service --> message
   command --> message
 ```
+
+先行専用の Command はありません。`CarryoverCommandImpl` → `CarryoverServiceImpl#aggregate` の中で持ち越しの `summary.json` 保存の直後に `AdvanceAggregateService` が `docs/data/advance/summary.json` を書き出します。
 
 サービスは一連の流れを行い、ロジックは個々の処理を行います。役割が複数あるサービスは、統合サービスを残して役割ごとに分けます。ロジックのメソッド同士の依存は薄く、共通のパラメータだけをフィールドで共有します。ロジックはサービスを呼びません。状態を持つサービス、ロジック、外部 API、DAO は prototype です。
 
@@ -183,8 +189,8 @@ classDiagram
 
 | 型                          | 種類         | 役割                                                                 |
 | --------------------------- | ------------ | -------------------------------------------------------------------- |
-| `CarryoverCommand`          | インタフェース | `CommandLineRunner`。実装は `CarryoverCommandImpl`                 |
-| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize`、`open`、単位ごとの `collect`、`aggregate` を行う |
+| `CarryoverCommand`          | インタフェース | `CommandLineRunner`。実装は `CarryoverCommandImpl`。先行専用 Command は置かない |
+| `CarryoverCommandImpl`      | 実装         | 引数をフィールドに取り、使い方の表示か、新しいサービスの `initialize`、`open`、単位ごとの `collect`、`aggregate` を行う。1 回の実行で持ち越しと先行の両方を扱う |
 | `CarryoverService`          | インタフェース | application に求める収集と集計（`initialize`、`open`、`hasNext`、`collect`、`aggregate`）。実装は `CarryoverServiceImpl` |
 | `CarryoverPropertiesModel`  | モデル       | `carryover.*` の設定。文字列と変換後の `Path` を持つ（入り口以外は本来の型） |
 | `CommandOptionTypes`        | 列挙型       | `--full`、`--help`、`-h`                                             |
@@ -194,11 +200,14 @@ classDiagram
 
 | 型                         | 種類         | 役割                                                                 |
 | -------------------------- | ------------ | -------------------------------------------------------------------- |
-| `CarryoverServiceImpl`     | サービス     | `open` で索引を取り、`CarryoverBatchLogic` で単位に分け、収集と集計のサービスを順に呼ぶ。全件モードか、`batchSize`、解析結果、取得件数、保存件数をフィールドに持つ。保存件数の累計はインスタンス単位で持ち、`initialize` でのみクリアする。結果のログ |
+| `CarryoverServiceImpl`     | サービス     | `open` で索引を取り、`CarryoverBatchLogic` で単位に分け、収集と集計のサービスを順に呼ぶ。持ち越しの summary 保存後に `AdvanceAggregateService` で先行の `advance/summary.json` も保存する。全件モードか、`batchSize`、解析結果、取得件数、保存件数をフィールドに持つ。保存件数の累計はインスタンス単位で持ち、`initialize` でのみクリアする。結果のログ |
 | `CarryoverCollectService`  | インタフェース | 取得、差分判定、解析、Issue の保存。実装は `CarryoverCollectServiceImpl` |
-| `CarryoverCollectServiceImpl` | サービス  | 取得元、最新件数、全件モードかをフィールドに持つ。`fetch`、`analyze`、`saveIssues` |
-| `CarryoverAggregateService` | インタフェース | 日別集計と summary の保存。実装は `CarryoverAggregateServiceImpl` |
-| `CarryoverAggregateServiceImpl` | サービス | 集計を作り、`summary.json` を保存する |
+| `CarryoverCollectServiceImpl` | サービス  | 取得元、最新件数、全件モードかをフィールドに持つ。`fetch`、`analyze`、`saveIssues`。解析には `## 先行` も含む |
+| `CarryoverAggregateService` | インタフェース | 持ち越しの日別集計と `summary.json` の保存。実装は `CarryoverAggregateServiceImpl` |
+| `CarryoverAggregateServiceImpl` | サービス | 持ち越し集計を作り、`summary.json` を保存する |
+| `AdvanceAggregateService` | インタフェース | 先行の日別集計と `advance/summary.json` の保存。実装は `AdvanceAggregateServiceImpl` |
+| `AdvanceAggregateServiceImpl` | サービス | 保存済み Issue から先行だけを集計し、`advance/summary.json` を保存する |
+| `AdvanceDataLogic` / `AdvanceAggregateLogic` | ロジック | 先行用の読み書きと集計（carryover と同型の役割） |
 | `DailyTaskIssueLogic`      | インタフェース | 日々のタスク Issue の取得。実装は `DailyTaskIssueLogicImpl` |
 | `DefaultMinutesLogic`      | インタフェース | 項目ごとの標準時間の読み込み。実装は `DefaultMinutesLogicImpl` |
 | `CarryoverDataLogic`       | インタフェース | 解析結果と画面用の集計の読み書き。実装は `CarryoverDataLogicImpl` |

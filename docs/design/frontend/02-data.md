@@ -40,7 +40,7 @@ sequenceDiagram
 
 ## summary.json のスキーマ
 
-スキーマは [features/carryover/model/summary.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/model/summary.ts) で定義し、型は `z.infer` で導出します（`Summary` / `Day` / `Stat`）。
+スキーマは [dailyTasks/carryover/model/summary.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/model/summary.ts) で定義し、型は `z.infer` で導出します（`Summary` / `Day` / `Stat`）。
 
 ```mermaid
 classDiagram
@@ -143,7 +143,7 @@ classDiagram
 
 ## 取得と検証
 
-[features/carryover/api/fetchSummary.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/api/fetchSummary.ts) の `fetchSummary()` が取得と検証を行います。
+[dailyTasks/carryover/api/fetchSummary.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/api/fetchSummary.ts) の `fetchSummary()` が取得と検証を行います。
 
 | 項目       | 内容                                                               |
 | ---------- | ------------------------------------------------------------------ |
@@ -168,5 +168,5 @@ classDiagram
 
 1. Java 側の出力を変更し、全件モード（`--full`）で再生成できることを確認する
 2. `model/summary.ts` のスキーマを変更する
-3. `tests/features/carryover/fixtures.ts` のテスト用データと、関係するテストを更新する
+3. `tests/dailyTasks/carryover/fixtures.ts` のテスト用データと、関係するテストを更新する
 4. 本章のスキーマの表を更新する

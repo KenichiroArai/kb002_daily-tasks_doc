@@ -2,14 +2,15 @@
 
 [設計書の入口へ戻る](../design.md)
 
-持ち越しの推移を表示する画面（[mk002_daily-tasks_web-next](https://github.com/KenichiroArai/mk002_daily-tasks_web-next)）の設計書です。
+持ち越し・先行の集計と全体概要を表示する画面（[mk002_daily-tasks_web-next](https://github.com/KenichiroArai/mk002_daily-tasks_web-next)）の設計書です。
 内容は mk002_daily-tasks_web-next の `src/` の現状の実装を正として記述しています。実装を変更した場合は、関係する章もあわせて更新してください。
 
 ## 目的
 
-GitHub Issue（1 日 1 Issue）で管理している日々のタスクのうち、「持ち越し」（旧「繰り越し」「負債」）の件数と残り時間の推移を、グラフと表で確認できるようにします。
+GitHub Issue（1 日 1 Issue）で管理している日々のタスクのうち、「持ち越し」（旧「繰り越し」「負債」）と「先行」の件数と残り時間の推移を、グラフと表で確認できるようにします。
 
-- 表示するデータは、Java の収集ツールが daily-tasks-git に出力する `docs/data/summary.json`（日別集計）だけです
+- ルートは `/`（概要）、`/carryover`（持ち越し）、`/advance`（先行）です
+- 表示するデータは、収集ツールが出力する `docs/data/summary.json`（持ち越し）と `docs/data/advance/summary.json`（先行）です
 - 画面はデータを読み取るだけで、変更はしません
 - GitHub Pages に静的サイトとして公開します
 
@@ -54,14 +55,14 @@ Java の収集ツール（Issue の取得・解析・集計）は対象外です
 ```mermaid
 flowchart LR
   issues["GitHub Issue"] --> collector["Java 収集ツール（gr002）"]
-  collector --> summaryJson["daily-tasks-git の docs/data/summary.json"]
+  collector --> summaryJson["summary.json / advance/summary.json"]
   summaryJson --> copyData["scripts/copy-data.mjs（mk002）"]
   copyData --> publicData["public/data/"]
   publicData --> build["next build（静的エクスポート）"]
   build --> out["out/"]
   out --> pages["GitHub Pages"]
   pages --> browser["ブラウザ"]
-  browser -->|"fetch summary.json"| pages
+  browser -->|"fetch summary.json / advance/summary.json"| pages
 ```
 
 ## 関連ドキュメント

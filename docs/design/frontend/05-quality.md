@@ -14,7 +14,7 @@
 | コンポーネント             | Vitest + Testing Library | 表示内容と、操作（`user-event`）に対するコールバックを検証する                    |
 
 - テストファイルは `tests/` に `src/` と同じ相対パスで `*.test.ts(x)` として置きます
-- テスト用のデータは [tests/features/carryover/fixtures.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/tests/features/carryover/fixtures.ts) の関数で作ります
+- テスト用のデータは [tests/dailyTasks/carryover/fixtures.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/tests/dailyTasks/carryover/fixtures.ts) の関数で作ります
 
 | 関数            | 内容                                           |
 | --------------- | ---------------------------------------------- |

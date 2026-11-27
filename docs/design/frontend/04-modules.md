@@ -90,7 +90,7 @@ type LoadState<T> =
 
 ### 画面の状態
 
-[hooks/dashboardReducer.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/dashboardReducer.ts) の `DashboardState` で表し、`useReducer` で管理します。
+[hooks/dashboardReducer.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/hooks/dashboardReducer.ts) の `DashboardState` で表し、`useReducer` で管理します。
 
 | 項目       | 型                    | 説明           |
 | ---------- | --------------------- | -------------- |
@@ -121,9 +121,9 @@ reducer は状態を直接変更せず、常に新しいオブジェクト（`se
 | フック                | 場所                                                                                                                                                      | 役割                                                                                                                                                       |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useAsync`            | [shared/hooks/useAsync.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/shared/hooks/useAsync.ts)                            | 非同期処理をマウント時に実行し `LoadState` を返す。loader に `AbortSignal` を渡し、アンマウント時に中断して結果を捨てる。Error 以外の失敗は `Error` に包む |
-| `useCarryoverSummary` | [hooks/useCarryoverSummary.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/useCarryoverSummary.ts) | `useAsync` で `fetchSummary` に `signal` を渡して summary.json を読み込む。loader はモジュールの定数にして参照を安定させる                                 |
-| `useQueryOptions`     | [hooks/useQueryOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/useQueryOptions.ts)         | 初回の描画時に 1 回だけ URL クエリを読み取る。`window` がない環境では空の条件を返す                                                                        |
-| `useDashboardOptions` | [hooks/useDashboardOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/features/carryover/hooks/useDashboardOptions.ts) | reducer を包み、`options`・`selected` と操作関数を返す。reducer（`dashboardReducer`）は内部用で `hooks/index.ts` から公開しない                                                                                                     |
+| `useCarryoverSummary` | [hooks/useCarryoverSummary.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/hooks/useCarryoverSummary.ts) | `useAsync` で `fetchSummary` に `signal` を渡して summary.json を読み込む。loader はモジュールの定数にして参照を安定させる                                 |
+| `useQueryOptions`     | [hooks/useQueryOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/hooks/useQueryOptions.ts)         | 初回の描画時に 1 回だけ URL クエリを読み取る。`window` がない環境では空の条件を返す                                                                        |
+| `useDashboardOptions` | [hooks/useDashboardOptions.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/dailyTasks/carryover/hooks/useDashboardOptions.ts) | reducer を包み、`options`・`selected` と操作関数を返す。reducer（`dashboardReducer`）は内部用で `hooks/index.ts` から公開しない                                                                                                     |
 
 `useDashboardOptions` が返す操作関数は次のとおりです。すべて `useCallback` で参照を安定させています。
 
@@ -138,7 +138,7 @@ reducer は状態を直接変更せず、常に新しいオブジェクト（`se
 
 ## lib（純粋関数）
 
-計算ロジックは `features/carryover/lib/` の純粋関数にまとめ、コンポーネントから切り離します。外部の状態や DOM に依存しないため、Vitest で単体テストします。
+計算ロジックは `dailyTasks/carryover/lib/` の純粋関数にまとめ、コンポーネントから切り離します。外部の状態や DOM に依存しないため、Vitest で単体テストします。
 
 ### calc.ts（基本の計算）
 
@@ -226,7 +226,7 @@ type ChartSpec = {
 
 ## コンポーネント
 
-### 機能のコンポーネント（features/carryover/components）
+### 機能のコンポーネント（dailyTasks/carryover/components）
 
 | コンポーネント       | 主な props                                                                       | 責務                                                                         |
 | -------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -263,7 +263,7 @@ type ChartSpec = {
 | `roundTo`      | 指定した小数の桁数で四捨五入する                                          |
 | `formatNumber` | 日本語ロケールで書式化する。整数以外は指定した桁数に丸める                |
 
-## 定数（features/carryover/constants）
+## 定数（dailyTasks/carryover/constants）
 
 | ファイル     | 定数                   | 内容                                                     |
 | ------------ | ---------------------- | -------------------------------------------------------- |

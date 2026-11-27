@@ -1,6 +1,6 @@
 # kb002_daily-tasks_doc
 
-日々のタスク（GitHub Issue、1 日 1 Issue）の「持ち越し」を集計・公開する daily-tasks の、設計書と横断的なドキュメントです。
+日々のタスク（GitHub Issue、1 日 1 Issue）の「持ち越し」と「先行」を集計・公開する daily-tasks の、設計書と横断的なドキュメントです。
 [daily-tasks-git](https://github.com/KenichiroArai/daily-tasks-git) を基軸とし、プログラム部分（バックエンド・フロントエンド）に関係するドキュメントを置いています。
 
 ## ドキュメント
