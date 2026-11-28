@@ -251,7 +251,8 @@ type ChartSpec = {
 | `Card`          | `ui/Card`              | `label`、`value`、`sub?`                             | ラベル・値・補足を縦に並べるカード                         |
 | `DateRange`     | `ui/DateRange`         | `from`、`to`、`min?`、`max?`、`onChange`             | 開始日と終了日の入力欄                                     |
 | `Swatch`        | `ui/Swatch`            | `color`                                              | 系列の色を示す小さな四角（`aria-hidden`）                  |
-| `Header`        | `layout/Header`        | `title`、`description?`                              | ページ上部の見出し                                         |
+| `Header`        | `layout/Header`        | `title`、`description?`、`navItems`                  | ページ上部の見出しとサイト内ナビ                           |
+| `HeaderNav`     | `layout/Header` 内     | `items`（`label` / `href`）                          | 概要・持ち越し・先行へのリンク。`usePathname` で現在地をハイライト |
 | `Footer`        | `layout/Footer`        | `prefix?`、`links`                                   | ページ下部のリンク一覧（`／` 区切り）                      |
 | `PageContainer` | `layout/PageContainer` | `children`                                           | 本文（`main` 要素）の幅と余白をそろえる                    |
 

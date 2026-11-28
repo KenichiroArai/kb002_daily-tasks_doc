@@ -11,13 +11,14 @@
 | `/advance`    | [app/advance/page.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/advance/page.tsx)   | 先行の推移（advance 機能のダッシュボード）   |
 | 該当なし      | [app/not-found.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/not-found.tsx)       | 「ページが見つかりません」とトップへのリンク   |
 
-すべてのページは [app/layout.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/layout.tsx) の共通レイアウト（Header / PageContainer / Footer）の中に表示します。Header のナビゲーションから 3 ルートを切り替えます。機能ページのタイトルは `siteConfig` と機能名に応じて付けます（[config/site.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/config/site.ts)）。
+すべてのページは [app/layout.tsx](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/app/layout.tsx) の共通レイアウト（Header / PageContainer / Footer）の中に表示します。Header のナビゲーション（概要 `/`・持ち越し `/carryover/`・先行 `/advance/`）から 3 ルートを切り替えます。項目は `siteConfig.navItems` で定義し、現在のパスに対応するリンクをハイライトします（[config/site.ts](https://github.com/KenichiroArai/mk002_daily-tasks_web-next/blob/main/src/config/site.ts)）。
 
 ## 画面構成（トップページ）
 
 ```text
 +------------------------------------------------------------+
-| Header: 持ち越しの推移 / 説明文                              |
+| Header: 毎日タスク / 説明文                                  |
+|         [概要] [持ち越し] [先行]                             |
 +------------------------------------------------------------+
 | 最新: 2026-10-07（#NNN）                                     |
 | SummaryCards: [最新の残（件数）][最新の残り時間][期間平均]   |
@@ -36,6 +37,10 @@ flowchart TB
   layout["RootLayout"] --> header["Header"]
   layout --> container["PageContainer"]
   layout --> footer["Footer"]
+  header --> headerNav["HeaderNav"]
+  headerNav -->|"Link"| overview["/"]
+  headerNav -->|"Link"| carryoverPage["/carryover/"]
+  headerNav -->|"Link"| advancePage["/advance/"]
   container --> dashboard["CarryoverDashboard"]
   dashboard -->|"loading / error"| panel["Panel（メッセージ）"]
   dashboard -->|"success"| view["DashboardView"]
