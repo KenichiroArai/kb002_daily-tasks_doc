@@ -83,7 +83,7 @@ flowchart TB
   javaBuild --> collect["Issue の収集と集計（daily-tasks-git で実行）"]
   collect --> commit["docs/data の差分をコミット（daily-tasks-git）"]
   commit --> configurePages["actions/configure-pages（basePath を取得）"]
-  configurePages --> node["Node.js 22 のセットアップ"]
+  configurePages --> node["Node.js 26 のセットアップ"]
   node --> frontendBuild["npm ci / lint / typecheck / test / build（mk002）"]
   frontendBuild --> upload["mk002 の out をアップロード"]
   upload --> deploy["GitHub Pages へデプロイ"]

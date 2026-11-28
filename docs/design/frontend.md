@@ -37,7 +37,7 @@ Java の収集ツール（Issue の取得・解析・集計）は対象外です
 | スタイル       | CSS Modules、`styles/globals.css`（CSS 変数）                   |
 | テスト         | Vitest 5、Testing Library、jsdom                                |
 | 静的解析・整形 | ESLint 9（`eslint-config-next`）、Prettier 3                    |
-| 実行環境       | Node.js 20.9 以降（CI は 22）                                   |
+| 実行環境       | Node.js 26 以降（CI は 26）                                     |
 | 公開           | GitHub Pages（GitHub Actions でデプロイ）                       |
 
 ## 設計書の構成
