@@ -63,8 +63,8 @@ gr002_daily-tasks でビルドし、daily-tasks-git をカレントにして実�
 | コマンド | 内容                                                                 |
 | -------- | -------------------------------------------------------------------- |
 | `mvn test` | テストと JaCoCo の 100% チェック。レポートは `target/site/jacoco/index.html` |
-| `mvn clean package` | テストと実行可能 jar の作成。成果物は `target/gr002_daily-tasks-0.2.0.jar` |
-| `java -jar ../gr002_daily-tasks/target/gr002_daily-tasks-0.2.0.jar` | 差分モード。daily-tasks-git で実行する |
+| `mvn clean package` | テストと実行可能 jar の作成。成果物は `target/gr002_daily-tasks-0.2.1.jar` |
+| `java -jar ../gr002_daily-tasks/target/gr002_daily-tasks-0.2.1.jar` | 差分モード。daily-tasks-git で実行する |
 | 同上に `--full` | 全件モード                                                           |
 | 同上に `--help` | 使い方の表示                                                         |
 

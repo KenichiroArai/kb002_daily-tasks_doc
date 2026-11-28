@@ -39,7 +39,7 @@ Issue 本文の解析ルールと JSON の項目定義は [Issue 解析の仕様
 | ログ           | SLF4J + Logback                                                                                   |
 | 共通型         | kmg-fund 0.3.1（kmg-core 0.3.2 は kmg-fund が依存し、kmg-fund に無い型だけ直接使う）              |
 | テスト         | JUnit 5、JaCoCo 0.8.14（行・分岐 100%）、ArchUnit 1.4.1                                           |
-| 成果物         | `kmg.gr.gr002` : `gr002_daily-tasks` : `0.2.0`                                                    |
+| 成果物         | `kmg.gr.gr002` : `gr002_daily-tasks` : `0.2.1`                                                    |
 
 ## 設計書の構成
 
